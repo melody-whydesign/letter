@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>3D Voice Letter Wave</title>
+<title>3D Voice Letter Path Wave</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
@@ -29,7 +29,8 @@ body {
   padding: 22px;
 }
 
-.panel, .stage {
+.panel,
+.stage {
   border-radius: 28px;
   background: rgba(255,255,255,.94);
   box-shadow: 0 24px 70px rgba(0,0,0,.16);
@@ -138,7 +139,7 @@ input[type="range"] {
 <body>
 <div class="app">
   <aside class="panel">
-    <h1>3D Voice Letter Wave</h1>
+    <h1>3D Voice Letter Path Wave</h1>
 
     <label>Letters</label>
     <input id="lettersInput" type="text" value="A" maxlength="8" />
@@ -146,37 +147,39 @@ input[type="range"] {
     <button id="recordBtn" class="button">Start Recording</button>
     <button id="stopBtn" class="button secondary" disabled>Stop Recording</button>
 
-    <label>Wave density <span id="densityValue" class="value">72</span></label>
-    <input id="densitySlider" type="range" min="32" max="180" value="72" />
+    <label>Path density <span id="densityValue" class="value">120</span></label>
+    <input id="densitySlider" type="range" min="60" max="260" value="120" />
 
-    <label>Surround distance <span id="distanceValue" class="value">34 mm</span></label>
-    <input id="distanceSlider" type="range" min="18" max="70" value="34" />
+    <label>Wave offset from letter <span id="distanceValue" class="value">12 mm</span></label>
+    <input id="distanceSlider" type="range" min="2" max="40" value="12" />
 
-    <label>Wave height <span id="waveValue" class="value">22 mm</span></label>
-    <input id="waveSlider" type="range" min="4" max="45" value="22" />
+    <label>Voice wave height <span id="waveValue" class="value">18 mm</span></label>
+    <input id="waveSlider" type="range" min="2" max="45" value="18" />
 
-    <label>Twist amount <span id="twistValue" class="value">1.2</span></label>
+    <label>Twist depth <span id="twistValue" class="value">1.2</span></label>
     <input id="twistSlider" type="range" min="0" max="3" step="0.1" value="1.2" />
 
     <label>Line thickness <span id="thicknessValue" class="value">1.4 mm</span></label>
     <input id="thicknessSlider" type="range" min="0.6" max="4" step="0.1" value="1.4" />
 
-    <label>Depth <span id="depthValue" class="value">3 mm</span></label>
+    <label>Letter depth <span id="depthValue" class="value">3 mm</span></label>
     <input id="depthSlider" type="range" min="1" max="8" step="0.5" value="3" />
+
+    <label>Wave layers <span id="layersValue" class="value">18</span></label>
+    <input id="layersSlider" type="range" min="4" max="36" value="18" />
 
     <button id="generateBtn" class="button">Generate 3D Model</button>
     <button id="downloadBtn" class="button">Download STL</button>
     <button id="resetBtn" class="button secondary">Reset</button>
 
     <p class="small">
-      Each uppercase letter has its own surrounding voice wave.  
-      The letterform is one clean 3D outline.  
-      The wave twists and morphs around each letter based on pitch, tone brightness, and volume.
+      Each letter has its own soundwave. The wave follows the outer path of the letterform instead of forming a circle.
+      The letter outline stays clean, while the voice wave twists and morphs from the letter’s contour.
     </p>
   </aside>
 
   <section class="stage">
-    <div class="badge">3D preview • clean letter outline • individual surrounding waves</div>
+    <div class="badge">3D preview • wave follows each letter path</div>
     <canvas id="viewer"></canvas>
   </section>
 </div>
@@ -197,6 +200,7 @@ const waveSlider = $("waveSlider");
 const twistSlider = $("twistSlider");
 const thicknessSlider = $("thicknessSlider");
 const depthSlider = $("depthSlider");
+const layersSlider = $("layersSlider");
 
 const densityValue = $("densityValue");
 const distanceValue = $("distanceValue");
@@ -204,6 +208,7 @@ const waveValue = $("waveValue");
 const twistValue = $("twistValue");
 const thicknessValue = $("thicknessValue");
 const depthValue = $("depthValue");
+const layersValue = $("layersValue");
 
 let scene, camera, renderer;
 let modelGroup;
@@ -222,8 +227,8 @@ function initScene() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
 
-  camera = new THREE.PerspectiveCamera(35, 1, 0.1, 2000);
-  camera.position.set(0, 0, 420);
+  camera = new THREE.PerspectiveCamera(35, 1, 0.1, 3000);
+  camera.position.set(0, 0, 460);
 
   renderer = new THREE.WebGLRenderer({
     canvas: $("viewer"),
@@ -232,7 +237,7 @@ function initScene() {
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+  scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
   const l1 = new THREE.DirectionalLight(0xffffff, 3);
   l1.position.set(3, 5, 5);
@@ -264,6 +269,7 @@ function initScene() {
   });
 
   renderer.domElement.addEventListener("pointerup", () => dragging = false);
+  renderer.domElement.addEventListener("pointerleave", () => dragging = false);
 
   animate();
 }
@@ -272,6 +278,7 @@ function resize() {
   const parent = $("viewer").parentElement;
   const w = parent.clientWidth;
   const h = parent.clientHeight;
+
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
@@ -279,12 +286,17 @@ function resize() {
 
 function animate() {
   requestAnimationFrame(animate);
-  if (modelGroup) modelGroup.rotation.y += 0.0015;
+
+  if (modelGroup) {
+    modelGroup.rotation.y += 0.0012;
+  }
+
   renderer.render(scene, camera);
 }
 
 function loadFont() {
   const loader = new THREE.FontLoader();
+
   loader.load(
     "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json",
     loaded => {
@@ -302,13 +314,22 @@ function updateLabels() {
   twistValue.textContent = twistSlider.value;
   thicknessValue.textContent = thicknessSlider.value + " mm";
   depthValue.textContent = depthSlider.value + " mm";
+  layersValue.textContent = layersSlider.value;
+}
+
+function material() {
+  return new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    metalness: 0.15,
+    roughness: 0.3
+  });
 }
 
 function defaultTone() {
-  return Array.from({ length: 160 }, (_, i) => ({
-    volume: 0.45 + 0.28 * Math.sin(i * 0.13),
-    pitch: 0.45 + 0.35 * Math.sin(i * 0.08 + 1.2),
-    brightness: 0.42 + 0.32 * Math.cos(i * 0.11)
+  return Array.from({ length: 220 }, (_, i) => ({
+    volume: 0.42 + 0.25 * Math.sin(i * 0.12),
+    pitch: 0.45 + 0.35 * Math.sin(i * 0.073 + 1.2),
+    brightness: 0.45 + 0.3 * Math.cos(i * 0.105)
   }));
 }
 
@@ -318,7 +339,11 @@ function normalize(v, min, max) {
 
 function autoCorrelate(buffer, sampleRate) {
   let rms = 0;
-  for (let i = 0; i < buffer.length; i++) rms += buffer[i] * buffer[i];
+
+  for (let i = 0; i < buffer.length; i++) {
+    rms += buffer[i] * buffer[i];
+  }
+
   rms = Math.sqrt(rms / buffer.length);
   if (rms < 0.01) return 0;
 
@@ -327,9 +352,11 @@ function autoCorrelate(buffer, sampleRate) {
 
   for (let offset = 20; offset < 1000; offset++) {
     let correlation = 0;
+
     for (let i = 0; i < buffer.length - offset; i++) {
       correlation += 1 - Math.abs(buffer[i] - buffer[i + offset]);
     }
+
     correlation /= buffer.length - offset;
 
     if (correlation > bestCorrelation) {
@@ -343,14 +370,22 @@ function autoCorrelate(buffer, sampleRate) {
 
 function brightness(samples) {
   let zero = 0;
+
   for (let i = 1; i < samples.length; i++) {
-    if ((samples[i - 1] < 0 && samples[i] >= 0) || (samples[i - 1] >= 0 && samples[i] < 0)) zero++;
+    if (
+      (samples[i - 1] < 0 && samples[i] >= 0) ||
+      (samples[i - 1] >= 0 && samples[i] < 0)
+    ) {
+      zero++;
+    }
   }
+
   return normalize(zero / samples.length, 0.02, 0.25);
 }
 
 async function analyzeAudio(arrayBuffer) {
   audioContext = audioContext || new AudioContext();
+
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
   const data = audioBuffer.getChannelData(0);
   const sampleRate = audioBuffer.sampleRate;
@@ -363,7 +398,11 @@ async function analyzeAudio(arrayBuffer) {
     const frame = data.slice(i, i + frameSize);
 
     let volume = 0;
-    for (let j = 0; j < frame.length; j++) volume += frame[j] * frame[j];
+
+    for (let j = 0; j < frame.length; j++) {
+      volume += frame[j] * frame[j];
+    }
+
     volume = Math.sqrt(volume / frame.length);
 
     const pitch = autoCorrelate(frame, sampleRate);
@@ -381,13 +420,13 @@ async function analyzeAudio(arrayBuffer) {
 
 function toneAt(i) {
   if (!toneData.length) toneData = defaultTone();
-  return toneData[i % toneData.length];
+  return toneData[Math.abs(i) % toneData.length];
 }
 
 recordBtn.onclick = async () => {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  chunks = [];
 
+  chunks = [];
   mediaRecorder = new MediaRecorder(stream);
 
   mediaRecorder.ondataavailable = e => {
@@ -397,7 +436,9 @@ recordBtn.onclick = async () => {
   mediaRecorder.onstop = async () => {
     const blob = new Blob(chunks, { type: "audio/webm" });
     const buffer = await blob.arrayBuffer();
+
     await analyzeAudio(buffer);
+
     stream.getTracks().forEach(track => track.stop());
   };
 
@@ -410,7 +451,9 @@ recordBtn.onclick = async () => {
 };
 
 stopBtn.onclick = () => {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
 
   recordBtn.classList.remove("recording");
   recordBtn.textContent = "Start Recording";
@@ -418,120 +461,304 @@ stopBtn.onclick = () => {
   stopBtn.disabled = true;
 };
 
-function createLetterOutline(letter, xOffset) {
-  const size = 92;
-  const depth = Number(depthSlider.value);
-  const lineThickness = Number(thicknessSlider.value);
+function polygonArea(points) {
+  let area = 0;
 
-  const textGeo = new THREE.TextGeometry(letter, {
-    font,
-    size,
-    height: depth,
-    curveSegments: 16,
-    bevelEnabled: false
-  });
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
 
-  textGeo.computeBoundingBox();
-
-  const box = textGeo.boundingBox;
-  const w = box.max.x - box.min.x;
-  const h = box.max.y - box.min.y;
-
-  textGeo.translate(-box.min.x - w / 2 + xOffset, -box.min.y - h / 2, -depth / 2);
-
-  const edges = new THREE.EdgesGeometry(textGeo, 25);
-  const positions = edges.attributes.position.array;
-
-  const group = new THREE.Group();
-
-  for (let i = 0; i < positions.length; i += 6) {
-    const a = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
-    const b = new THREE.Vector3(positions[i+3], positions[i+4], positions[i+5]);
-
-    const len = a.distanceTo(b);
-    if (len < 2) continue;
-
-    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
-    const dir = new THREE.Vector3().subVectors(b, a).normalize();
-
-    const cyl = new THREE.Mesh(
-      new THREE.CylinderGeometry(lineThickness, lineThickness, len, 12),
-      material()
-    );
-
-    cyl.position.copy(mid);
-    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
-    group.add(cyl);
+    area += a.x * b.y - b.x * a.y;
   }
 
-  return { group, width: w, height: h };
+  return area / 2;
 }
 
-function createSoundWave(letterIndex, xOffset, letterW, letterH) {
+function cleanClosedPoints(points) {
+  const cleaned = [];
+
+  for (const p of points) {
+    if (!cleaned.length || cleaned[cleaned.length - 1].distanceTo(p) > 0.5) {
+      cleaned.push(p.clone());
+    }
+  }
+
+  if (cleaned.length > 2 && cleaned[0].distanceTo(cleaned[cleaned.length - 1]) < 0.5) {
+    cleaned.pop();
+  }
+
+  return cleaned;
+}
+
+function resampleClosedPath(points, count) {
+  const path = cleanClosedPoints(points);
+  const lengths = [];
+  let total = 0;
+
+  for (let i = 0; i < path.length; i++) {
+    const a = path[i];
+    const b = path[(i + 1) % path.length];
+    const d = a.distanceTo(b);
+    lengths.push(d);
+    total += d;
+  }
+
+  const result = [];
+
+  for (let i = 0; i < count; i++) {
+    const target = (i / count) * total;
+    let acc = 0;
+
+    for (let j = 0; j < path.length; j++) {
+      const next = acc + lengths[j];
+
+      if (target <= next) {
+        const a = path[j];
+        const b = path[(j + 1) % path.length];
+        const t = lengths[j] === 0 ? 0 : (target - acc) / lengths[j];
+
+        result.push(new THREE.Vector2(
+          a.x + (b.x - a.x) * t,
+          a.y + (b.y - a.y) * t
+        ));
+
+        break;
+      }
+
+      acc = next;
+    }
+  }
+
+  return result;
+}
+
+function getLetterContours(letter) {
+  const size = 96;
+  const shapes = font.generateShapes(letter, size);
+
+  let all = [];
+
+  shapes.forEach(shape => {
+    const outer = cleanClosedPoints(shape.getSpacedPoints(160));
+    all.push({
+      type: "outer",
+      points: outer,
+      area: Math.abs(polygonArea(outer))
+    });
+
+    shape.holes.forEach(hole => {
+      const inner = cleanClosedPoints(hole.getSpacedPoints(100));
+      all.push({
+        type: "hole",
+        points: inner,
+        area: Math.abs(polygonArea(inner))
+      });
+    });
+  });
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  all.forEach(contour => {
+    contour.points.forEach(p => {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y);
+      maxY = Math.max(maxY, p.y);
+    });
+  });
+
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+
+  all.forEach(contour => {
+    contour.points.forEach(p => {
+      p.x -= cx;
+      p.y -= cy;
+    });
+  });
+
+  all.sort((a, b) => b.area - a.area);
+
+  return {
+    contours: all,
+    outer: all[0],
+    width: maxX - minX,
+    height: maxY - minY
+  };
+}
+
+function tubeFrom2DPath(points, xOffset, zOffset, radius, closed = true) {
+  const curvePoints = points.map(p => new THREE.Vector3(p.x + xOffset, p.y, zOffset));
+  const curve = new THREE.CatmullRomCurve3(curvePoints, closed);
+
+  const geo = new THREE.TubeGeometry(
+    curve,
+    Math.max(80, points.length * 2),
+    radius,
+    10,
+    closed
+  );
+
+  return new THREE.Mesh(geo, material());
+}
+
+function createCleanLetterOutline(letter, xOffset) {
+  const letterData = getLetterContours(letter);
+  const group = new THREE.Group();
+
+  const thickness = Number(thicknessSlider.value);
+  const depth = Number(depthSlider.value);
+
+  letterData.contours.forEach(contour => {
+    const count = contour.type === "outer" ? 180 : 120;
+    const pts = resampleClosedPath(contour.points, count);
+
+    const front = tubeFrom2DPath(pts, xOffset, depth / 2, thickness, true);
+    const back = tubeFrom2DPath(pts, xOffset, -depth / 2, thickness, true);
+
+    group.add(front);
+    group.add(back);
+
+    for (let i = 0; i < pts.length; i += 8) {
+      const p = pts[i];
+      const geo = new THREE.CylinderGeometry(thickness, thickness, depth, 10);
+      const mesh = new THREE.Mesh(geo, material());
+
+      mesh.position.set(p.x + xOffset, p.y, 0);
+      mesh.rotation.x = Math.PI / 2;
+
+      group.add(mesh);
+    }
+  });
+
+  return {
+    group,
+    outerPath: resampleClosedPath(letterData.outer.points, Number(densitySlider.value)),
+    width: letterData.width,
+    height: letterData.height
+  };
+}
+
+function outwardNormalFromCenter(point) {
+  const n = new THREE.Vector2(point.x, point.y);
+
+  if (n.length() < 0.001) {
+    return new THREE.Vector2(0, 1);
+  }
+
+  return n.normalize();
+}
+
+function createLetterPathWave(letterIndex, xOffset, outerPath) {
+  const group = new THREE.Group();
+
   const density = Number(densitySlider.value);
-  const surround = Number(distanceSlider.value);
+  const offset = Number(distanceSlider.value);
   const waveHeight = Number(waveSlider.value);
   const twist = Number(twistSlider.value);
-  const tube = Number(thicknessSlider.value) * 0.55;
+  const layers = Number(layersSlider.value);
+  const tubeRadius = Number(thicknessSlider.value) * 0.48;
 
-  const curves = 34;
-  const points = [];
+  const path = resampleClosedPath(outerPath, density);
 
-  for (let c = 0; c < curves; c++) {
-    const layer = c / curves;
+  for (let layer = 0; layer < layers; layer++) {
+    const layerT = layer / Math.max(1, layers - 1);
     const curvePoints = [];
 
-    for (let i = 0; i <= density; i++) {
-      const t = i / density;
-      const angle = t * Math.PI * 2;
+    for (let i = 0; i < path.length; i++) {
+      const p = path[i];
+      const prev = path[(i - 1 + path.length) % path.length];
+      const next = path[(i + 1) % path.length];
 
-      const tone = toneAt(i + c * 5 + letterIndex * 31);
+      const tangent = new THREE.Vector2(
+        next.x - prev.x,
+        next.y - prev.y
+      ).normalize();
 
-      const rx = letterW / 2 + surround + layer * 18;
-      const ry = letterH / 2 + surround + layer * 18;
+      const radialNormal = outwardNormalFromCenter(p);
+      const sideNormal = new THREE.Vector2(-tangent.y, tangent.x);
 
-      const pitchWave = Math.sin(angle * (3 + tone.pitch * 8) + layer * 6) * waveHeight * tone.pitch;
-      const brightWave = Math.cos(angle * (5 + tone.brightness * 5) - layer * 4) * waveHeight * tone.brightness * 0.7;
-      const volumePush = tone.volume * waveHeight * 0.9;
+      if (sideNormal.dot(radialNormal) < 0) {
+        sideNormal.multiplyScalar(-1);
+      }
 
-      const rMorph = pitchWave + brightWave + volumePush;
+      const tone = toneAt(i + layer * 9 + letterIndex * 47);
 
-      let x = xOffset + Math.cos(angle) * (rx + rMorph);
-      let y = Math.sin(angle) * (ry + rMorph);
-      let z = Math.sin(angle * 2 + layer * Math.PI * 2) * twist * 15 * tone.pitch;
+      const pitchWave =
+        Math.sin(i * 0.12 + tone.pitch * 8 + layerT * Math.PI * 2) *
+        tone.pitch *
+        waveHeight;
 
-      x += Math.sin(angle * 3 + layer * 5) * twist * tone.brightness * 14;
-      y += Math.cos(angle * 2 - layer * 4) * twist * tone.pitch * 14;
+      const brightnessWave =
+        Math.cos(i * 0.19 + tone.brightness * 7 - layerT * Math.PI * 3) *
+        tone.brightness *
+        waveHeight *
+        0.75;
+
+      const volumePush = tone.volume * waveHeight * 0.8;
+
+      const contourOffset =
+        offset +
+        layerT * 10 +
+        pitchWave +
+        brightnessWave +
+        volumePush;
+
+      const twistAlongPath =
+        Math.sin(i * 0.1 + layerT * Math.PI * 2) *
+        twist *
+        10 *
+        tone.pitch;
+
+      const morphAlongPath =
+        Math.cos(i * 0.16 - layerT * Math.PI * 4) *
+        twist *
+        8 *
+        tone.brightness;
+
+      const x =
+        xOffset +
+        p.x +
+        sideNormal.x * contourOffset +
+        tangent.x * morphAlongPath;
+
+      const y =
+        p.y +
+        sideNormal.y * contourOffset +
+        tangent.y * morphAlongPath;
+
+      const z =
+        twistAlongPath +
+        Math.sin(layerT * Math.PI * 2) * twist * 5;
 
       curvePoints.push(new THREE.Vector3(x, y, z));
     }
 
-    points.push(curvePoints);
+    const curve = new THREE.CatmullRomCurve3(curvePoints, true);
+
+    const geo = new THREE.TubeGeometry(
+      curve,
+      density * 2,
+      tubeRadius,
+      8,
+      true
+    );
+
+    group.add(new THREE.Mesh(geo, material()));
   }
 
-  const group = new THREE.Group();
-
-  points.forEach(curvePoints => {
-    const curve = new THREE.CatmullRomCurve3(curvePoints, true);
-    const geo = new THREE.TubeGeometry(curve, density, tube, 8, true);
-    group.add(new THREE.Mesh(geo, material()));
-  });
-
   return group;
-}
-
-function material() {
-  return new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    metalness: 0.25,
-    roughness: 0.28
-  });
 }
 
 function generateModel() {
   if (!font) return;
 
-  if (modelGroup) scene.remove(modelGroup);
+  if (modelGroup) {
+    scene.remove(modelGroup);
+  }
 
   modelGroup = new THREE.Group();
 
@@ -540,14 +767,14 @@ function generateModel() {
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 8);
 
-  const spacing = 150;
-  const totalWidth = (text.length - 1) * spacing;
+  const letterGap = 145;
+  const totalWidth = (text.length - 1) * letterGap;
 
   for (let i = 0; i < text.length; i++) {
-    const x = i * spacing - totalWidth / 2;
+    const x = i * letterGap - totalWidth / 2;
 
-    const letter = createLetterOutline(text[i], x);
-    const wave = createSoundWave(i, x, letter.width, letter.height);
+    const letter = createCleanLetterOutline(text[i], x);
+    const wave = createLetterPathWave(i, x, letter.outerPath);
 
     modelGroup.add(letter.group);
     modelGroup.add(wave);
@@ -555,10 +782,22 @@ function generateModel() {
 
   scene.add(modelGroup);
 
-  modelGroup.rotation.x = -0.15;
-  modelGroup.rotation.y = 0.25;
+  modelGroup.rotation.x = -0.18;
+  modelGroup.rotation.y = 0.28;
 
-  stlText = toSTL(modelGroup, "voice_letter_wave");
+  fitCameraToModel();
+  stlText = toSTL(modelGroup, "voice_letter_path_wave");
+}
+
+function fitCameraToModel() {
+  const box = new THREE.Box3().setFromObject(modelGroup);
+  const size = new THREE.Vector3();
+
+  box.getSize(size);
+
+  const maxDim = Math.max(size.x, size.y, size.z);
+  camera.position.set(0, 0, Math.max(260, maxDim * 1.65));
+  camera.lookAt(0, 0, 0);
 }
 
 function toSTL(group, name) {
@@ -574,6 +813,7 @@ function toSTL(group, name) {
 
     const pos = geo.getAttribute("position");
     const index = geo.index;
+
     const normal = new THREE.Vector3();
     const a = new THREE.Vector3();
     const b = new THREE.Vector3();
@@ -610,25 +850,30 @@ function toSTL(group, name) {
 }
 
 downloadBtn.onclick = () => {
-  stlText = toSTL(modelGroup, "voice_letter_wave");
+  stlText = toSTL(modelGroup, "voice_letter_path_wave");
 
   const blob = new Blob([stlText], { type: "model/stl" });
   const link = document.createElement("a");
+
   link.href = URL.createObjectURL(blob);
-  link.download = "voice-letter-wave.stl";
+  link.download = "voice-letter-path-wave.stl";
   link.click();
+
   URL.revokeObjectURL(link.href);
 };
 
 resetBtn.onclick = () => {
   lettersInput.value = "A";
-  densitySlider.value = 72;
-  distanceSlider.value = 34;
-  waveSlider.value = 22;
+  densitySlider.value = 120;
+  distanceSlider.value = 12;
+  waveSlider.value = 18;
   twistSlider.value = 1.2;
   thicknessSlider.value = 1.4;
   depthSlider.value = 3;
+  layersSlider.value = 18;
+
   toneData = defaultTone();
+
   updateLabels();
   generateModel();
 };
@@ -640,7 +885,8 @@ resetBtn.onclick = () => {
   waveSlider,
   twistSlider,
   thicknessSlider,
-  depthSlider
+  depthSlider,
+  layersSlider
 ].forEach(el => {
   el.addEventListener("input", () => {
     updateLabels();
