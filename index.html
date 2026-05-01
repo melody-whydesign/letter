@@ -1,142 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Letter Soundwave</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  height:100vh;
+  display:grid;
+  grid-template-columns:360px 1fr;
+  font-family:Helvetica,Arial,sans-serif;
+  background:#f7d000;
+}
+
+.panel{
+  padding:24px;
+  background:#fff;
+}
+
+.stage{
+  background:#000;
+  position:relative;
+}
+
+canvas{
+  width:100%;
+  height:100%;
+}
+
+textarea{
+  width:100%;
+  height:80px;
+  font-size:32px;
+  font-weight:900;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+
+button{
+  width:100%;
+  height:44px;
+  margin-top:8px;
+  border:0;
+  border-radius:10px;
+  background:#111;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="panel">
+  <h2>Letter Soundwave</h2>
+
+  <textarea id="textInput">A</textarea>
+
+  <button id="recordBtn">Start Recording</button>
+  <button id="stopBtn" disabled>Stop</button>
+  <button id="playBtn" disabled>Play</button>
+
+</div>
+
+<div class="stage">
+  <canvas id="canvas"></canvas>
+</div>
+
 <script>
-function drawSurroundWave(cx,cy,rx,ry,index,power){
-  const count = Number(density.value);
-  const phase = index * 41;
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const textInput = document.getElementById("textInput");
+
+let audioBuffer = null;
+let voiceData = generateDefault();
+
+function resize(){
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+  draw();
+}
+window.addEventListener("resize", resize);
+
+function generateDefault(){
+  let arr=[];
+  for(let i=0;i<200;i++){
+    arr.push({
+      amp:0.4 + Math.sin(i*0.2)*0.2,
+      pitch:0.5 + Math.sin(i*0.05)*0.3
+    });
+  }
+  return arr;
+}
+
+function draw(){
+  const w = canvas.width;
+  const h = canvas.height;
+
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#000";
+  ctx.fillRect(0,0,w,h);
+
+  const letter = textInput.value.toUpperCase().charAt(0) || "A";
+
+  const cx = w/2;
+  const cy = h/2;
+
+  const fontSize = Math.min(w,h)*0.5;
+
+  ctx.font = `900 ${fontSize}px Helvetica, Arial`;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+
+  const metrics = ctx.measureText(letter);
+  const rx = metrics.width/2 + 40;
+  const ry = fontSize*0.4 + 40;
+
+  drawWave(cx,cy,rx,ry);
+
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=6;
+  ctx.strokeText(letter,cx,cy);
+}
+
+function drawWave(cx,cy,rx,ry){
+  const count = 240;
   const points = [];
 
   for(let i=0;i<=count;i++){
-    const t = i / count;
-    const a = t * Math.PI * 2;
+    const t = i/count;
+    const a = t*Math.PI*2;
 
-    const d = voiceData[(i + phase) % voiceData.length] || {amp:.4,pitch:.4};
+    const d = voiceData[i % voiceData.length];
 
     const twist =
-      Math.sin(a * 3 + d.pitch * 9 + index) * d.pitch * .38 +
-      Math.sin(a * 7 + d.amp * 5) * d.amp * .18;
+      Math.sin(a*3 + d.pitch*8)*0.4 +
+      Math.sin(a*7)*0.2;
 
     const aa = a + twist;
 
     const squareMorph = Math.max(
+      0.001,
       Math.abs(Math.cos(aa)),
       Math.abs(Math.sin(aa))
     );
 
-    const letterInfluence =
-      .72 +
-      .28 * Math.sin(aa * 2 + index) +
-      .16 * Math.sin(aa * 5 + d.pitch * 8);
+    const baseX = Math.cos(aa)*rx/squareMorph;
+    const baseY = Math.sin(aa)*ry/squareMorph;
 
-    const baseX = Math.cos(aa) * rx / squareMorph;
-    const baseY = Math.sin(aa) * ry / squareMorph;
+    const offset =
+      d.amp*40 +
+      Math.sin(aa*(4 + d.pitch*12))*d.pitch*25;
 
-    const toneWave =
-      Math.sin(aa * (5 + d.pitch * 20) + d.pitch * 14) *
-      power *
-      d.pitch *
-      .55;
+    const nx = baseX/rx;
+    const ny = baseY/ry;
 
-    const volumeWave = d.amp * power;
-
-    const breathe =
-      Math.sin(a * 2 + index * 1.7) *
-      power *
-      .12;
-
-    const offset = volumeWave + toneWave + breathe;
-
-    const nx = baseX / rx;
-    const ny = baseY / ry;
-
-    const x = cx + baseX * letterInfluence + nx * offset;
-    const y = cy + baseY * letterInfluence + ny * offset;
+    const x = cx + baseX + nx*offset;
+    const y = cy + baseY + ny*offset;
 
     points.push({x,y});
   }
 
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,.95)";
-  ctx.lineWidth = 1.1;
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=1.2;
 
-  for(let layer=0; layer<24; layer++){
-    const scale = 1 - layer * .011;
-    const shift = layer * .012;
-    const alpha = 1 - layer * .038;
+  for(let layer=0;layer<18;layer++){
+    ctx.globalAlpha = 1 - layer*0.05;
 
-    ctx.globalAlpha = alpha;
     ctx.beginPath();
-
     points.forEach((p,i)=>{
-      const px = cx + (p.x - cx) * scale;
-      const py = cy + (p.y - cy) * scale;
+      const scale = 1 - layer*0.01;
+      const x = cx + (p.x-cx)*scale;
+      const y = cy + (p.y-cy)*scale;
 
-      const angle = Math.atan2(py-cy, px-cx);
-      const twistX = Math.cos(angle + shift * 8) * layer * .42;
-      const twistY = Math.sin(angle - shift * 8) * layer * .42;
-
-      if(i===0) ctx.moveTo(px + twistX, py + twistY);
-      else ctx.lineTo(px + twistX, py + twistY);
+      if(i===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
     });
 
     ctx.closePath();
     ctx.stroke();
   }
 
-  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
-function makeWavePath(cx,cy,rx,ry,index,power,count){
-  const phase = index * 41;
-  let dString = "";
-
-  for(let i=0;i<=count;i++){
-    const t = i / count;
-    const a = t * Math.PI * 2;
-
-    const d = voiceData[(i + phase) % voiceData.length] || {amp:.4,pitch:.4};
-
-    const twist =
-      Math.sin(a * 3 + d.pitch * 9 + index) * d.pitch * .38 +
-      Math.sin(a * 7 + d.amp * 5) * d.amp * .18;
-
-    const aa = a + twist;
-
-    const squareMorph = Math.max(
-      Math.abs(Math.cos(aa)),
-      Math.abs(Math.sin(aa))
-    );
-
-    const letterInfluence =
-      .72 +
-      .28 * Math.sin(aa * 2 + index) +
-      .16 * Math.sin(aa * 5 + d.pitch * 8);
-
-    const baseX = Math.cos(aa) * rx / squareMorph;
-    const baseY = Math.sin(aa) * ry / squareMorph;
-
-    const toneWave =
-      Math.sin(aa * (5 + d.pitch * 20) + d.pitch * 14) *
-      power *
-      d.pitch *
-      .55;
-
-    const volumeWave = d.amp * power;
-
-    const breathe =
-      Math.sin(a * 2 + index * 1.7) *
-      power *
-      .12;
-
-    const offset = volumeWave + toneWave + breathe;
-
-    const nx = baseX / rx;
-    const ny = baseY / ry;
-
-    const x = cx + baseX * letterInfluence + nx * offset;
-    const y = cy + baseY * letterInfluence + ny * offset;
-
-    dString += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
-  }
-
-  return dString + " Z";
-}
+resize();
 </script>
+
+</body>
+</html>
