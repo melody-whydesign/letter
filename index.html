@@ -1,196 +1,551 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Letter Soundwave</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voice Letter Wave Studio</title>
 
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  height:100vh;
-  display:grid;
-  grid-template-columns:360px 1fr;
-  font-family:Helvetica,Arial,sans-serif;
-  background:#f7d000;
-}
+  * { box-sizing: border-box; }
 
-.panel{
-  padding:24px;
-  background:#fff;
-}
+  body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    font-family: Helvetica, Arial, sans-serif;
+    background: #f7d000;
+    color: #222;
+  }
 
-.stage{
-  background:#000;
-  position:relative;
-}
+  .app {
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 370px 1fr;
+    gap: 22px;
+    padding: 22px;
+  }
 
-canvas{
-  width:100%;
-  height:100%;
-}
+  .panel, .stage {
+    border-radius: 28px;
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 24px 70px rgba(0,0,0,.16);
+    overflow: hidden;
+  }
 
-textarea{
-  width:100%;
-  height:80px;
-  font-size:32px;
-  font-weight:900;
-  text-transform:uppercase;
-  margin-bottom:12px;
-}
+  .panel {
+    padding: 26px;
+    overflow-y: auto;
+  }
 
-button{
-  width:100%;
-  height:44px;
-  margin-top:8px;
-  border:0;
-  border-radius:10px;
-  background:#111;
-  color:#fff;
-  font-weight:700;
-  cursor:pointer;
-}
+  h1 {
+    margin: 0 0 22px;
+    font-size: 30px;
+    letter-spacing: -0.04em;
+  }
+
+  label {
+    display: block;
+    font-weight: 800;
+    margin: 18px 0 8px;
+  }
+
+  input[type="text"], input[type="file"] {
+    width: 100%;
+    height: 48px;
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 14px;
+    padding: 0 14px;
+    font-size: 18px;
+    font-family: Helvetica, Arial, sans-serif;
+    text-transform: uppercase;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: #111;
+  }
+
+  .button {
+    width: 100%;
+    height: 50px;
+    margin: 8px 0;
+    border: 0;
+    border-radius: 14px;
+    background: #111;
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .button.secondary {
+    background: #777;
+  }
+
+  .button.recording {
+    background: #e00000;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .small {
+    color: #666;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .stage {
+    position: relative;
+    background: #000;
+  }
+
+  #preview {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #000;
+  }
+
+  .badge {
+    position: absolute;
+    left: 24px;
+    top: 22px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.82);
+    font-size: 13px;
+    font-weight: 800;
+    color: #555;
+  }
+
+  .value {
+    float: right;
+    color: #666;
+    font-size: 13px;
+  }
+
+  @media(max-width: 900px) {
+    body { overflow: auto; height: auto; }
+    .app { grid-template-columns: 1fr; height: auto; }
+    .stage { height: 70vh; min-height: 500px; }
+  }
 </style>
 </head>
 
 <body>
+<div class="app">
+  <aside class="panel">
+    <h1>Voice Letter Wave</h1>
 
-<div class="panel">
-  <h2>Letter Soundwave</h2>
+    <label>Letters</label>
+    <input id="lettersInput" type="text" value="FLOW" maxlength="10" />
 
-  <textarea id="textInput">A</textarea>
+    <button id="recordBtn" class="button">Start Recording</button>
+    <button id="stopBtn" class="button secondary" disabled>Stop Recording</button>
 
-  <button id="recordBtn">Start Recording</button>
-  <button id="stopBtn" disabled>Stop</button>
-  <button id="playBtn" disabled>Play</button>
+    <label>Or upload audio</label>
+    <input id="audioFile" type="file" accept="audio/*" />
 
-</div>
+    <label>Wave density <span id="densityValue" class="value">72</span></label>
+    <input id="densitySlider" type="range" min="24" max="160" value="72" />
 
-<div class="stage">
-  <canvas id="canvas"></canvas>
+    <label>Surround distance <span id="distanceValue" class="value">70</span></label>
+    <input id="distanceSlider" type="range" min="20" max="150" value="70" />
+
+    <label>Twist amount <span id="twistValue" class="value">1.2</span></label>
+    <input id="twistSlider" type="range" min="0" max="3" step="0.1" value="1.2" />
+
+    <label>Morph amount <span id="morphValue" class="value">0.8</span></label>
+    <input id="morphSlider" type="range" min="0" max="2" step="0.1" value="0.8" />
+
+    <label>Letter outline thickness <span id="outlineValue" class="value">5</span></label>
+    <input id="outlineSlider" type="range" min="1" max="14" value="5" />
+
+    <div class="row">
+      <button id="exportPngBtn" class="button">Export PNG</button>
+      <button id="resetBtn" class="button secondary">Reset</button>
+    </div>
+
+    <p class="small">
+      The preview uses uppercase Helvetica outline letters.  
+      The surrounding wave is generated from voice tone: pitch movement, spectral brightness, and volume.
+      Higher pitch creates tighter twisting; brighter tone creates sharper waves.
+    </p>
+  </aside>
+
+  <section class="stage">
+    <div class="badge">Helvetica outline + tone-based surrounding wave</div>
+    <canvas id="preview"></canvas>
+  </section>
 </div>
 
 <script>
-const canvas = document.getElementById("canvas");
+const canvas = document.getElementById("preview");
 const ctx = canvas.getContext("2d");
 
-const textInput = document.getElementById("textInput");
+const lettersInput = document.getElementById("lettersInput");
+const recordBtn = document.getElementById("recordBtn");
+const stopBtn = document.getElementById("stopBtn");
+const audioFile = document.getElementById("audioFile");
 
-let audioBuffer = null;
-let voiceData = generateDefault();
+const densitySlider = document.getElementById("densitySlider");
+const distanceSlider = document.getElementById("distanceSlider");
+const twistSlider = document.getElementById("twistSlider");
+const morphSlider = document.getElementById("morphSlider");
+const outlineSlider = document.getElementById("outlineSlider");
 
-function resize(){
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
+const densityValue = document.getElementById("densityValue");
+const distanceValue = document.getElementById("distanceValue");
+const twistValue = document.getElementById("twistValue");
+const morphValue = document.getElementById("morphValue");
+const outlineValue = document.getElementById("outlineValue");
+
+const exportPngBtn = document.getElementById("exportPngBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+let audioContext;
+let mediaRecorder;
+let chunks = [];
+let toneData = [];
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + "px";
+  canvas.style.height = rect.height + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   draw();
 }
-window.addEventListener("resize", resize);
 
-function generateDefault(){
-  let arr=[];
-  for(let i=0;i<200;i++){
-    arr.push({
-      amp:0.4 + Math.sin(i*0.2)*0.2,
-      pitch:0.5 + Math.sin(i*0.05)*0.3
+window.addEventListener("resize", resizeCanvas);
+
+function normalize(value, min, max) {
+  return Math.max(0, Math.min(1, (value - min) / (max - min)));
+}
+
+function autoCorrelate(buffer, sampleRate) {
+  let SIZE = buffer.length;
+  let rms = 0;
+
+  for (let i = 0; i < SIZE; i++) rms += buffer[i] * buffer[i];
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.01) return 0;
+
+  let bestOffset = -1;
+  let bestCorrelation = 0;
+
+  for (let offset = 20; offset < 1000; offset++) {
+    let correlation = 0;
+
+    for (let i = 0; i < SIZE - offset; i++) {
+      correlation += 1 - Math.abs(buffer[i] - buffer[i + offset]);
+    }
+
+    correlation = correlation / (SIZE - offset);
+
+    if (correlation > bestCorrelation) {
+      bestCorrelation = correlation;
+      bestOffset = offset;
+    }
+  }
+
+  if (bestCorrelation > 0.75 && bestOffset > 0) {
+    return sampleRate / bestOffset;
+  }
+
+  return 0;
+}
+
+function spectralBrightness(samples, sampleRate) {
+  let zeroCrossings = 0;
+
+  for (let i = 1; i < samples.length; i++) {
+    if ((samples[i - 1] < 0 && samples[i] >= 0) || (samples[i - 1] >= 0 && samples[i] < 0)) {
+      zeroCrossings++;
+    }
+  }
+
+  return normalize(zeroCrossings / samples.length, 0.02, 0.25);
+}
+
+async function analyzeAudio(arrayBuffer) {
+  audioContext = audioContext || new AudioContext();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+  const data = audioBuffer.getChannelData(0);
+  const sampleRate = audioBuffer.sampleRate;
+
+  const frameSize = 2048;
+  const hop = 1024;
+  const frames = [];
+
+  for (let i = 0; i < data.length - frameSize; i += hop) {
+    const frame = data.slice(i, i + frameSize);
+
+    let volume = 0;
+    for (let j = 0; j < frame.length; j++) volume += frame[j] * frame[j];
+    volume = Math.sqrt(volume / frame.length);
+
+    const pitch = autoCorrelate(frame, sampleRate);
+    const brightness = spectralBrightness(frame, sampleRate);
+
+    frames.push({
+      volume: normalize(volume, 0.005, 0.12),
+      pitch: pitch ? normalize(pitch, 80, 700) : 0.25,
+      brightness
     });
   }
-  return arr;
+
+  toneData = frames.length ? frames : defaultTone();
+  draw();
 }
 
-function draw(){
-  const w = canvas.width;
-  const h = canvas.height;
-
-  ctx.clearRect(0,0,w,h);
-  ctx.fillStyle="#000";
-  ctx.fillRect(0,0,w,h);
-
-  const letter = textInput.value.toUpperCase().charAt(0) || "A";
-
-  const cx = w/2;
-  const cy = h/2;
-
-  const fontSize = Math.min(w,h)*0.5;
-
-  ctx.font = `900 ${fontSize}px Helvetica, Arial`;
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-
-  const metrics = ctx.measureText(letter);
-  const rx = metrics.width/2 + 40;
-  const ry = fontSize*0.4 + 40;
-
-  drawWave(cx,cy,rx,ry);
-
-  ctx.strokeStyle="#fff";
-  ctx.lineWidth=6;
-  ctx.strokeText(letter,cx,cy);
+function defaultTone() {
+  return Array.from({ length: 120 }, (_, i) => ({
+    volume: 0.45 + 0.25 * Math.sin(i * 0.13),
+    pitch: 0.45 + 0.35 * Math.sin(i * 0.07 + 1.4),
+    brightness: 0.45 + 0.25 * Math.cos(i * 0.11)
+  }));
 }
 
-function drawWave(cx,cy,rx,ry){
-  const count = 240;
-  const points = [];
+function toneAt(i) {
+  if (!toneData.length) toneData = defaultTone();
+  return toneData[i % toneData.length];
+}
 
-  for(let i=0;i<=count;i++){
-    const t = i/count;
-    const a = t*Math.PI*2;
+function drawLetter(text, x, y, size, outline) {
+  ctx.save();
+  ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
 
-    const d = voiceData[i % voiceData.length];
+  ctx.strokeStyle = "rgba(255,255,255,0.96)";
+  ctx.lineWidth = outline;
+  ctx.strokeText(text, x, y);
 
-    const twist =
-      Math.sin(a*3 + d.pitch*8)*0.4 +
-      Math.sin(a*7)*0.2;
+  ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  ctx.lineWidth = 1;
+  ctx.strokeText(text, x, y);
 
-    const aa = a + twist;
+  ctx.restore();
+}
 
-    const squareMorph = Math.max(
-      0.001,
-      Math.abs(Math.cos(aa)),
-      Math.abs(Math.sin(aa))
-    );
+function letterMetrics(text, w, h) {
+  let size = Math.min(h * 0.44, w / Math.max(1.3, text.length * 0.62));
+  ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
 
-    const baseX = Math.cos(aa)*rx/squareMorph;
-    const baseY = Math.sin(aa)*ry/squareMorph;
-
-    const offset =
-      d.amp*40 +
-      Math.sin(aa*(4 + d.pitch*12))*d.pitch*25;
-
-    const nx = baseX/rx;
-    const ny = baseY/ry;
-
-    const x = cx + baseX + nx*offset;
-    const y = cy + baseY + ny*offset;
-
-    points.push({x,y});
+  while (ctx.measureText(text).width > w * 0.72 && size > 20) {
+    size *= 0.94;
+    ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
   }
 
-  ctx.strokeStyle="#fff";
-  ctx.lineWidth=1.2;
+  const width = ctx.measureText(text).width;
+  return { size, width, height: size };
+}
 
-  for(let layer=0;layer<18;layer++){
-    ctx.globalAlpha = 1 - layer*0.05;
+function drawSurroundWave(text, cx, cy, letterW, letterH) {
+  const density = Number(densitySlider.value);
+  const surround = Number(distanceSlider.value);
+  const twist = Number(twistSlider.value);
+  const morph = Number(morphSlider.value);
+
+  const lines = 44;
+  const points = density * 2;
+
+  for (let l = 0; l < lines; l++) {
+    const layer = l / lines;
+    const phase = layer * Math.PI * 2;
 
     ctx.beginPath();
-    points.forEach((p,i)=>{
-      const scale = 1 - layer*0.01;
-      const x = cx + (p.x-cx)*scale;
-      const y = cy + (p.y-cy)*scale;
 
-      if(i===0) ctx.moveTo(x,y);
-      else ctx.lineTo(x,y);
-    });
+    for (let i = 0; i <= points; i++) {
+      const t = i / points;
+      const angle = t * Math.PI * 2;
 
-    ctx.closePath();
+      const tone = toneAt(i + l * 3);
+
+      const pitchPull = tone.pitch * twist * 55;
+      const brightRipple = tone.brightness * 38;
+      const volumePush = tone.volume * 60;
+
+      const rx = letterW / 2 + surround + volumePush + layer * 34;
+      const ry = letterH / 2 + surround * 0.82 + volumePush * 0.7 + layer * 26;
+
+      const wave =
+        Math.sin(angle * (3 + tone.pitch * 7) + phase) * brightRipple +
+        Math.sin(angle * 1.5 + phase * 2.2) * pitchPull;
+
+      const twistX = Math.sin(angle * 2 + phase) * pitchPull;
+      const twistY = Math.cos(angle * 3 - phase) * pitchPull * 0.8;
+
+      let x = cx + Math.cos(angle) * (rx + wave * morph) + twistX * morph;
+      let y = cy + Math.sin(angle) * (ry + wave * morph) + twistY * morph;
+
+      const topBend = Math.sin(t * Math.PI * 4 + phase) * tone.pitch * 34;
+      const sideBend = Math.cos(t * Math.PI * 5 - phase) * tone.brightness * 26;
+
+      x += sideBend * morph;
+      y += topBend * morph;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    const alpha = 0.92 - layer * 0.018;
+    ctx.strokeStyle = `rgba(255,255,255,${Math.max(0.06, alpha)})`;
+    ctx.lineWidth = 1.05;
     ctx.stroke();
   }
-
-  ctx.globalAlpha = 1;
 }
 
-resize();
-</script>
+function drawMorphingLetterEcho(text, cx, cy, size) {
+  const twist = Number(twistSlider.value);
+  const morph = Number(morphSlider.value);
 
+  ctx.save();
+  ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+
+  for (let i = 0; i < 18; i++) {
+    const tone = toneAt(i * 7);
+    const a = i / 18;
+    const dx = Math.sin(i * 0.7) * tone.pitch * twist * 18 * morph;
+    const dy = Math.cos(i * 0.55) * tone.brightness * twist * 18 * morph;
+    const rot = Math.sin(i * 0.36) * tone.pitch * 0.08 * twist;
+    const scaleX = 1 + Math.sin(i * 0.45) * tone.brightness * 0.035 * morph;
+    const scaleY = 1 + Math.cos(i * 0.5) * tone.pitch * 0.035 * morph;
+
+    ctx.save();
+    ctx.translate(cx + dx, cy + dy);
+    ctx.rotate(rot);
+    ctx.scale(scaleX, scaleY);
+
+    ctx.strokeStyle = `rgba(255,255,255,${0.22 - a * 0.01})`;
+    ctx.lineWidth = 1;
+    ctx.strokeText(text, 0, 0);
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function draw() {
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, w, h);
+
+  const text = (lettersInput.value || "A").toUpperCase();
+  const cx = w / 2;
+  const cy = h / 2 + 20;
+
+  const m = letterMetrics(text, w, h);
+  const outline = Number(outlineSlider.value);
+
+  drawSurroundWave(text, cx, cy, m.width, m.height);
+  drawMorphingLetterEcho(text, cx, cy, m.size);
+  drawLetter(text, cx, cy, m.size, outline);
+}
+
+recordBtn.onclick = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  chunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+
+  mediaRecorder.ondataavailable = e => {
+    if (e.data.size) chunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    const blob = new Blob(chunks, { type: "audio/webm" });
+    const buffer = await blob.arrayBuffer();
+    await analyzeAudio(buffer);
+    stream.getTracks().forEach(track => track.stop());
+  };
+
+  mediaRecorder.start();
+  recordBtn.classList.add("recording");
+  recordBtn.textContent = "Recording...";
+  recordBtn.disabled = true;
+  stopBtn.disabled = false;
+};
+
+stopBtn.onclick = () => {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+
+  recordBtn.classList.remove("recording");
+  recordBtn.textContent = "Start Recording";
+  recordBtn.disabled = false;
+  stopBtn.disabled = true;
+};
+
+audioFile.onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const buffer = await file.arrayBuffer();
+  await analyzeAudio(buffer);
+};
+
+[
+  lettersInput,
+  densitySlider,
+  distanceSlider,
+  twistSlider,
+  morphSlider,
+  outlineSlider
+].forEach(el => {
+  el.addEventListener("input", () => {
+    densityValue.textContent = densitySlider.value;
+    distanceValue.textContent = distanceSlider.value;
+    twistValue.textContent = twistSlider.value;
+    morphValue.textContent = morphSlider.value;
+    outlineValue.textContent = outlineSlider.value;
+    draw();
+  });
+});
+
+exportPngBtn.onclick = () => {
+  const link = document.createElement("a");
+  link.download = "voice-letter-wave.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+};
+
+resetBtn.onclick = () => {
+  lettersInput.value = "FLOW";
+  densitySlider.value = 72;
+  distanceSlider.value = 70;
+  twistSlider.value = 1.2;
+  morphSlider.value = 0.8;
+  outlineSlider.value = 5;
+  toneData = defaultTone();
+
+  densityValue.textContent = densitySlider.value;
+  distanceValue.textContent = distanceSlider.value;
+  twistValue.textContent = twistSlider.value;
+  morphValue.textContent = morphSlider.value;
+  outlineValue.textContent = outlineSlider.value;
+
+  draw();
+};
+
+toneData = defaultTone();
+resizeCanvas();
+</script>
 </body>
 </html>
