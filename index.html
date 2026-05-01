@@ -3,238 +3,323 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Voice Letter Wave Studio</title>
+<title>3D Voice Letter Wave</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
 
 <style>
-  * { box-sizing: border-box; }
+* { box-sizing: border-box; }
 
-  body {
-    margin: 0;
-    height: 100vh;
-    overflow: hidden;
-    font-family: Helvetica, Arial, sans-serif;
-    background: #f7d000;
-    color: #222;
-  }
+body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  font-family: Helvetica, Arial, sans-serif;
+  background: #f7d000;
+  color: #222;
+}
 
-  .app {
-    height: 100vh;
-    display: grid;
-    grid-template-columns: 370px 1fr;
-    gap: 22px;
-    padding: 22px;
-  }
+.app {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 370px 1fr;
+  gap: 22px;
+  padding: 22px;
+}
 
-  .panel, .stage {
-    border-radius: 28px;
-    background: rgba(255,255,255,.92);
-    box-shadow: 0 24px 70px rgba(0,0,0,.16);
-    overflow: hidden;
-  }
+.panel, .stage {
+  border-radius: 28px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 24px 70px rgba(0,0,0,.16);
+  overflow: hidden;
+}
 
-  .panel {
-    padding: 26px;
-    overflow-y: auto;
-  }
+.panel {
+  padding: 26px;
+  overflow-y: auto;
+}
 
-  h1 {
-    margin: 0 0 22px;
-    font-size: 30px;
-    letter-spacing: -0.04em;
-  }
+.stage {
+  position: relative;
+  background: #000;
+}
 
-  label {
-    display: block;
-    font-weight: 800;
-    margin: 18px 0 8px;
-  }
+h1 {
+  margin: 0 0 22px;
+  font-size: 30px;
+  letter-spacing: -0.04em;
+}
 
-  input[type="text"], input[type="file"] {
-    width: 100%;
-    height: 48px;
-    border: 1px solid rgba(0,0,0,.12);
-    border-radius: 14px;
-    padding: 0 14px;
-    font-size: 18px;
-    font-family: Helvetica, Arial, sans-serif;
-    text-transform: uppercase;
-  }
+label {
+  display: block;
+  font-weight: 800;
+  margin: 18px 0 8px;
+}
 
-  input[type="range"] {
-    width: 100%;
-    accent-color: #111;
-  }
+input[type="text"] {
+  width: 100%;
+  height: 48px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 14px;
+  padding: 0 14px;
+  font-size: 20px;
+  text-transform: uppercase;
+  font-family: Helvetica, Arial, sans-serif;
+}
 
-  .button {
-    width: 100%;
-    height: 50px;
-    margin: 8px 0;
-    border: 0;
-    border-radius: 14px;
-    background: #111;
-    color: white;
-    font-size: 16px;
-    font-weight: 800;
-    cursor: pointer;
-  }
+input[type="range"] {
+  width: 100%;
+  accent-color: #111;
+}
 
-  .button.secondary {
-    background: #777;
-  }
+.button {
+  width: 100%;
+  height: 50px;
+  margin: 8px 0;
+  border: 0;
+  border-radius: 14px;
+  background: #111;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
 
-  .button.recording {
-    background: #e00000;
-  }
+.button.secondary {
+  background: #777;
+}
 
-  .row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
+.button.recording {
+  background: #e00000;
+}
 
-  .small {
-    color: #666;
-    font-size: 13px;
-    line-height: 1.45;
-  }
+.value {
+  float: right;
+  color: #666;
+  font-size: 13px;
+}
 
-  .stage {
-    position: relative;
-    background: #000;
-  }
+.small {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.45;
+}
 
-  #preview {
-    width: 100%;
-    height: 100%;
-    display: block;
-    background: #000;
-  }
+#viewer {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
 
-  .badge {
-    position: absolute;
-    left: 24px;
-    top: 22px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: rgba(255,255,255,.82);
-    font-size: 13px;
-    font-weight: 800;
-    color: #555;
-  }
+.badge {
+  position: absolute;
+  left: 24px;
+  top: 22px;
+  z-index: 2;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.82);
+  font-size: 13px;
+  font-weight: 800;
+  color: #555;
+}
 
-  .value {
-    float: right;
-    color: #666;
-    font-size: 13px;
-  }
-
-  @media(max-width: 900px) {
-    body { overflow: auto; height: auto; }
-    .app { grid-template-columns: 1fr; height: auto; }
-    .stage { height: 70vh; min-height: 500px; }
-  }
+@media(max-width:900px) {
+  body { overflow: auto; height: auto; }
+  .app { grid-template-columns: 1fr; height: auto; }
+  .stage { height: 70vh; min-height: 500px; }
+}
 </style>
 </head>
 
 <body>
 <div class="app">
   <aside class="panel">
-    <h1>Voice Letter Wave</h1>
+    <h1>3D Voice Letter Wave</h1>
 
     <label>Letters</label>
-    <input id="lettersInput" type="text" value="FLOW" maxlength="10" />
+    <input id="lettersInput" type="text" value="A" maxlength="8" />
 
     <button id="recordBtn" class="button">Start Recording</button>
     <button id="stopBtn" class="button secondary" disabled>Stop Recording</button>
 
-    <label>Or upload audio</label>
-    <input id="audioFile" type="file" accept="audio/*" />
-
     <label>Wave density <span id="densityValue" class="value">72</span></label>
-    <input id="densitySlider" type="range" min="24" max="160" value="72" />
+    <input id="densitySlider" type="range" min="32" max="180" value="72" />
 
-    <label>Surround distance <span id="distanceValue" class="value">70</span></label>
-    <input id="distanceSlider" type="range" min="20" max="150" value="70" />
+    <label>Surround distance <span id="distanceValue" class="value">34 mm</span></label>
+    <input id="distanceSlider" type="range" min="18" max="70" value="34" />
+
+    <label>Wave height <span id="waveValue" class="value">22 mm</span></label>
+    <input id="waveSlider" type="range" min="4" max="45" value="22" />
 
     <label>Twist amount <span id="twistValue" class="value">1.2</span></label>
     <input id="twistSlider" type="range" min="0" max="3" step="0.1" value="1.2" />
 
-    <label>Morph amount <span id="morphValue" class="value">0.8</span></label>
-    <input id="morphSlider" type="range" min="0" max="2" step="0.1" value="0.8" />
+    <label>Line thickness <span id="thicknessValue" class="value">1.4 mm</span></label>
+    <input id="thicknessSlider" type="range" min="0.6" max="4" step="0.1" value="1.4" />
 
-    <label>Letter outline thickness <span id="outlineValue" class="value">5</span></label>
-    <input id="outlineSlider" type="range" min="1" max="14" value="5" />
+    <label>Depth <span id="depthValue" class="value">3 mm</span></label>
+    <input id="depthSlider" type="range" min="1" max="8" step="0.5" value="3" />
 
-    <div class="row">
-      <button id="exportPngBtn" class="button">Export PNG</button>
-      <button id="resetBtn" class="button secondary">Reset</button>
-    </div>
+    <button id="generateBtn" class="button">Generate 3D Model</button>
+    <button id="downloadBtn" class="button">Download STL</button>
+    <button id="resetBtn" class="button secondary">Reset</button>
 
     <p class="small">
-      The preview uses uppercase Helvetica outline letters.  
-      The surrounding wave is generated from voice tone: pitch movement, spectral brightness, and volume.
-      Higher pitch creates tighter twisting; brighter tone creates sharper waves.
+      Each uppercase letter has its own surrounding voice wave.  
+      The letterform is one clean 3D outline.  
+      The wave twists and morphs around each letter based on pitch, tone brightness, and volume.
     </p>
   </aside>
 
   <section class="stage">
-    <div class="badge">Helvetica outline + tone-based surrounding wave</div>
-    <canvas id="preview"></canvas>
+    <div class="badge">3D preview • clean letter outline • individual surrounding waves</div>
+    <canvas id="viewer"></canvas>
   </section>
 </div>
 
 <script>
-const canvas = document.getElementById("preview");
-const ctx = canvas.getContext("2d");
+const $ = id => document.getElementById(id);
 
-const lettersInput = document.getElementById("lettersInput");
-const recordBtn = document.getElementById("recordBtn");
-const stopBtn = document.getElementById("stopBtn");
-const audioFile = document.getElementById("audioFile");
+const lettersInput = $("lettersInput");
+const recordBtn = $("recordBtn");
+const stopBtn = $("stopBtn");
+const generateBtn = $("generateBtn");
+const downloadBtn = $("downloadBtn");
+const resetBtn = $("resetBtn");
 
-const densitySlider = document.getElementById("densitySlider");
-const distanceSlider = document.getElementById("distanceSlider");
-const twistSlider = document.getElementById("twistSlider");
-const morphSlider = document.getElementById("morphSlider");
-const outlineSlider = document.getElementById("outlineSlider");
+const densitySlider = $("densitySlider");
+const distanceSlider = $("distanceSlider");
+const waveSlider = $("waveSlider");
+const twistSlider = $("twistSlider");
+const thicknessSlider = $("thicknessSlider");
+const depthSlider = $("depthSlider");
 
-const densityValue = document.getElementById("densityValue");
-const distanceValue = document.getElementById("distanceValue");
-const twistValue = document.getElementById("twistValue");
-const morphValue = document.getElementById("morphValue");
-const outlineValue = document.getElementById("outlineValue");
+const densityValue = $("densityValue");
+const distanceValue = $("distanceValue");
+const waveValue = $("waveValue");
+const twistValue = $("twistValue");
+const thicknessValue = $("thicknessValue");
+const depthValue = $("depthValue");
 
-const exportPngBtn = document.getElementById("exportPngBtn");
-const resetBtn = document.getElementById("resetBtn");
-
-let audioContext;
+let scene, camera, renderer;
+let modelGroup;
+let font;
 let mediaRecorder;
 let chunks = [];
+let audioContext;
 let toneData = [];
+let stlText = "";
 
-function resizeCanvas() {
-  const rect = canvas.parentElement.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  canvas.style.width = rect.width + "px";
-  canvas.style.height = rect.height + "px";
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  draw();
+initScene();
+loadFont();
+updateLabels();
+
+function initScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+
+  camera = new THREE.PerspectiveCamera(35, 1, 0.1, 2000);
+  camera.position.set(0, 0, 420);
+
+  renderer = new THREE.WebGLRenderer({
+    canvas: $("viewer"),
+    antialias: true
+  });
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+
+  const l1 = new THREE.DirectionalLight(0xffffff, 3);
+  l1.position.set(3, 5, 5);
+  scene.add(l1);
+
+  const l2 = new THREE.DirectionalLight(0xffffff, 2);
+  l2.position.set(-4, -2, 5);
+  scene.add(l2);
+
+  window.addEventListener("resize", resize);
+  resize();
+
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  renderer.domElement.addEventListener("pointerdown", e => {
+    dragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+  });
+
+  renderer.domElement.addEventListener("pointermove", e => {
+    if (!dragging || !modelGroup) return;
+    modelGroup.rotation.y += (e.clientX - lastX) * 0.01;
+    modelGroup.rotation.x += (e.clientY - lastY) * 0.01;
+    lastX = e.clientX;
+    lastY = e.clientY;
+  });
+
+  renderer.domElement.addEventListener("pointerup", () => dragging = false);
+
+  animate();
 }
 
-window.addEventListener("resize", resizeCanvas);
+function resize() {
+  const parent = $("viewer").parentElement;
+  const w = parent.clientWidth;
+  const h = parent.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
 
-function normalize(value, min, max) {
-  return Math.max(0, Math.min(1, (value - min) / (max - min)));
+function animate() {
+  requestAnimationFrame(animate);
+  if (modelGroup) modelGroup.rotation.y += 0.0015;
+  renderer.render(scene, camera);
+}
+
+function loadFont() {
+  const loader = new THREE.FontLoader();
+  loader.load(
+    "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json",
+    loaded => {
+      font = loaded;
+      toneData = defaultTone();
+      generateModel();
+    }
+  );
+}
+
+function updateLabels() {
+  densityValue.textContent = densitySlider.value;
+  distanceValue.textContent = distanceSlider.value + " mm";
+  waveValue.textContent = waveSlider.value + " mm";
+  twistValue.textContent = twistSlider.value;
+  thicknessValue.textContent = thicknessSlider.value + " mm";
+  depthValue.textContent = depthSlider.value + " mm";
+}
+
+function defaultTone() {
+  return Array.from({ length: 160 }, (_, i) => ({
+    volume: 0.45 + 0.28 * Math.sin(i * 0.13),
+    pitch: 0.45 + 0.35 * Math.sin(i * 0.08 + 1.2),
+    brightness: 0.42 + 0.32 * Math.cos(i * 0.11)
+  }));
+}
+
+function normalize(v, min, max) {
+  return Math.max(0, Math.min(1, (v - min) / (max - min)));
 }
 
 function autoCorrelate(buffer, sampleRate) {
-  let SIZE = buffer.length;
   let rms = 0;
-
-  for (let i = 0; i < SIZE; i++) rms += buffer[i] * buffer[i];
-  rms = Math.sqrt(rms / SIZE);
+  for (let i = 0; i < buffer.length; i++) rms += buffer[i] * buffer[i];
+  rms = Math.sqrt(rms / buffer.length);
   if (rms < 0.01) return 0;
 
   let bestOffset = -1;
@@ -242,12 +327,10 @@ function autoCorrelate(buffer, sampleRate) {
 
   for (let offset = 20; offset < 1000; offset++) {
     let correlation = 0;
-
-    for (let i = 0; i < SIZE - offset; i++) {
+    for (let i = 0; i < buffer.length - offset; i++) {
       correlation += 1 - Math.abs(buffer[i] - buffer[i + offset]);
     }
-
-    correlation = correlation / (SIZE - offset);
+    correlation /= buffer.length - offset;
 
     if (correlation > bestCorrelation) {
       bestCorrelation = correlation;
@@ -255,23 +338,15 @@ function autoCorrelate(buffer, sampleRate) {
     }
   }
 
-  if (bestCorrelation > 0.75 && bestOffset > 0) {
-    return sampleRate / bestOffset;
-  }
-
-  return 0;
+  return bestCorrelation > 0.72 ? sampleRate / bestOffset : 0;
 }
 
-function spectralBrightness(samples, sampleRate) {
-  let zeroCrossings = 0;
-
+function brightness(samples) {
+  let zero = 0;
   for (let i = 1; i < samples.length; i++) {
-    if ((samples[i - 1] < 0 && samples[i] >= 0) || (samples[i - 1] >= 0 && samples[i] < 0)) {
-      zeroCrossings++;
-    }
+    if ((samples[i - 1] < 0 && samples[i] >= 0) || (samples[i - 1] >= 0 && samples[i] < 0)) zero++;
   }
-
-  return normalize(zeroCrossings / samples.length, 0.02, 0.25);
+  return normalize(zero / samples.length, 0.02, 0.25);
 }
 
 async function analyzeAudio(arrayBuffer) {
@@ -292,25 +367,16 @@ async function analyzeAudio(arrayBuffer) {
     volume = Math.sqrt(volume / frame.length);
 
     const pitch = autoCorrelate(frame, sampleRate);
-    const brightness = spectralBrightness(frame, sampleRate);
 
     frames.push({
       volume: normalize(volume, 0.005, 0.12),
-      pitch: pitch ? normalize(pitch, 80, 700) : 0.25,
-      brightness
+      pitch: pitch ? normalize(pitch, 80, 700) : 0.3,
+      brightness: brightness(frame)
     });
   }
 
   toneData = frames.length ? frames : defaultTone();
-  draw();
-}
-
-function defaultTone() {
-  return Array.from({ length: 120 }, (_, i) => ({
-    volume: 0.45 + 0.25 * Math.sin(i * 0.13),
-    pitch: 0.45 + 0.35 * Math.sin(i * 0.07 + 1.4),
-    brightness: 0.45 + 0.25 * Math.cos(i * 0.11)
-  }));
+  generateModel();
 }
 
 function toneAt(i) {
@@ -318,151 +384,10 @@ function toneAt(i) {
   return toneData[i % toneData.length];
 }
 
-function drawLetter(text, x, y, size, outline) {
-  ctx.save();
-  ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-
-  ctx.strokeStyle = "rgba(255,255,255,0.96)";
-  ctx.lineWidth = outline;
-  ctx.strokeText(text, x, y);
-
-  ctx.strokeStyle = "rgba(255,255,255,0.25)";
-  ctx.lineWidth = 1;
-  ctx.strokeText(text, x, y);
-
-  ctx.restore();
-}
-
-function letterMetrics(text, w, h) {
-  let size = Math.min(h * 0.44, w / Math.max(1.3, text.length * 0.62));
-  ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
-
-  while (ctx.measureText(text).width > w * 0.72 && size > 20) {
-    size *= 0.94;
-    ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
-  }
-
-  const width = ctx.measureText(text).width;
-  return { size, width, height: size };
-}
-
-function drawSurroundWave(text, cx, cy, letterW, letterH) {
-  const density = Number(densitySlider.value);
-  const surround = Number(distanceSlider.value);
-  const twist = Number(twistSlider.value);
-  const morph = Number(morphSlider.value);
-
-  const lines = 44;
-  const points = density * 2;
-
-  for (let l = 0; l < lines; l++) {
-    const layer = l / lines;
-    const phase = layer * Math.PI * 2;
-
-    ctx.beginPath();
-
-    for (let i = 0; i <= points; i++) {
-      const t = i / points;
-      const angle = t * Math.PI * 2;
-
-      const tone = toneAt(i + l * 3);
-
-      const pitchPull = tone.pitch * twist * 55;
-      const brightRipple = tone.brightness * 38;
-      const volumePush = tone.volume * 60;
-
-      const rx = letterW / 2 + surround + volumePush + layer * 34;
-      const ry = letterH / 2 + surround * 0.82 + volumePush * 0.7 + layer * 26;
-
-      const wave =
-        Math.sin(angle * (3 + tone.pitch * 7) + phase) * brightRipple +
-        Math.sin(angle * 1.5 + phase * 2.2) * pitchPull;
-
-      const twistX = Math.sin(angle * 2 + phase) * pitchPull;
-      const twistY = Math.cos(angle * 3 - phase) * pitchPull * 0.8;
-
-      let x = cx + Math.cos(angle) * (rx + wave * morph) + twistX * morph;
-      let y = cy + Math.sin(angle) * (ry + wave * morph) + twistY * morph;
-
-      const topBend = Math.sin(t * Math.PI * 4 + phase) * tone.pitch * 34;
-      const sideBend = Math.cos(t * Math.PI * 5 - phase) * tone.brightness * 26;
-
-      x += sideBend * morph;
-      y += topBend * morph;
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-
-    const alpha = 0.92 - layer * 0.018;
-    ctx.strokeStyle = `rgba(255,255,255,${Math.max(0.06, alpha)})`;
-    ctx.lineWidth = 1.05;
-    ctx.stroke();
-  }
-}
-
-function drawMorphingLetterEcho(text, cx, cy, size) {
-  const twist = Number(twistSlider.value);
-  const morph = Number(morphSlider.value);
-
-  ctx.save();
-  ctx.font = `900 ${size}px Helvetica, Arial, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.lineJoin = "round";
-
-  for (let i = 0; i < 18; i++) {
-    const tone = toneAt(i * 7);
-    const a = i / 18;
-    const dx = Math.sin(i * 0.7) * tone.pitch * twist * 18 * morph;
-    const dy = Math.cos(i * 0.55) * tone.brightness * twist * 18 * morph;
-    const rot = Math.sin(i * 0.36) * tone.pitch * 0.08 * twist;
-    const scaleX = 1 + Math.sin(i * 0.45) * tone.brightness * 0.035 * morph;
-    const scaleY = 1 + Math.cos(i * 0.5) * tone.pitch * 0.035 * morph;
-
-    ctx.save();
-    ctx.translate(cx + dx, cy + dy);
-    ctx.rotate(rot);
-    ctx.scale(scaleX, scaleY);
-
-    ctx.strokeStyle = `rgba(255,255,255,${0.22 - a * 0.01})`;
-    ctx.lineWidth = 1;
-    ctx.strokeText(text, 0, 0);
-
-    ctx.restore();
-  }
-
-  ctx.restore();
-}
-
-function draw() {
-  const rect = canvas.getBoundingClientRect();
-  const w = rect.width;
-  const h = rect.height;
-
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, w, h);
-
-  const text = (lettersInput.value || "A").toUpperCase();
-  const cx = w / 2;
-  const cy = h / 2 + 20;
-
-  const m = letterMetrics(text, w, h);
-  const outline = Number(outlineSlider.value);
-
-  drawSurroundWave(text, cx, cy, m.width, m.height);
-  drawMorphingLetterEcho(text, cx, cy, m.size);
-  drawLetter(text, cx, cy, m.size, outline);
-}
-
 recordBtn.onclick = async () => {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   chunks = [];
+
   mediaRecorder = new MediaRecorder(stream);
 
   mediaRecorder.ondataavailable = e => {
@@ -477,6 +402,7 @@ recordBtn.onclick = async () => {
   };
 
   mediaRecorder.start();
+
   recordBtn.classList.add("recording");
   recordBtn.textContent = "Recording...";
   recordBtn.disabled = true;
@@ -484,9 +410,7 @@ recordBtn.onclick = async () => {
 };
 
 stopBtn.onclick = () => {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
-  }
+  if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
 
   recordBtn.classList.remove("recording");
   recordBtn.textContent = "Start Recording";
@@ -494,58 +418,237 @@ stopBtn.onclick = () => {
   stopBtn.disabled = true;
 };
 
-audioFile.onchange = async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const buffer = await file.arrayBuffer();
-  await analyzeAudio(buffer);
+function createLetterOutline(letter, xOffset) {
+  const size = 92;
+  const depth = Number(depthSlider.value);
+  const lineThickness = Number(thicknessSlider.value);
+
+  const textGeo = new THREE.TextGeometry(letter, {
+    font,
+    size,
+    height: depth,
+    curveSegments: 16,
+    bevelEnabled: false
+  });
+
+  textGeo.computeBoundingBox();
+
+  const box = textGeo.boundingBox;
+  const w = box.max.x - box.min.x;
+  const h = box.max.y - box.min.y;
+
+  textGeo.translate(-box.min.x - w / 2 + xOffset, -box.min.y - h / 2, -depth / 2);
+
+  const edges = new THREE.EdgesGeometry(textGeo, 25);
+  const positions = edges.attributes.position.array;
+
+  const group = new THREE.Group();
+
+  for (let i = 0; i < positions.length; i += 6) {
+    const a = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
+    const b = new THREE.Vector3(positions[i+3], positions[i+4], positions[i+5]);
+
+    const len = a.distanceTo(b);
+    if (len < 2) continue;
+
+    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+    const dir = new THREE.Vector3().subVectors(b, a).normalize();
+
+    const cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(lineThickness, lineThickness, len, 12),
+      material()
+    );
+
+    cyl.position.copy(mid);
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+    group.add(cyl);
+  }
+
+  return { group, width: w, height: h };
+}
+
+function createSoundWave(letterIndex, xOffset, letterW, letterH) {
+  const density = Number(densitySlider.value);
+  const surround = Number(distanceSlider.value);
+  const waveHeight = Number(waveSlider.value);
+  const twist = Number(twistSlider.value);
+  const tube = Number(thicknessSlider.value) * 0.55;
+
+  const curves = 34;
+  const points = [];
+
+  for (let c = 0; c < curves; c++) {
+    const layer = c / curves;
+    const curvePoints = [];
+
+    for (let i = 0; i <= density; i++) {
+      const t = i / density;
+      const angle = t * Math.PI * 2;
+
+      const tone = toneAt(i + c * 5 + letterIndex * 31);
+
+      const rx = letterW / 2 + surround + layer * 18;
+      const ry = letterH / 2 + surround + layer * 18;
+
+      const pitchWave = Math.sin(angle * (3 + tone.pitch * 8) + layer * 6) * waveHeight * tone.pitch;
+      const brightWave = Math.cos(angle * (5 + tone.brightness * 5) - layer * 4) * waveHeight * tone.brightness * 0.7;
+      const volumePush = tone.volume * waveHeight * 0.9;
+
+      const rMorph = pitchWave + brightWave + volumePush;
+
+      let x = xOffset + Math.cos(angle) * (rx + rMorph);
+      let y = Math.sin(angle) * (ry + rMorph);
+      let z = Math.sin(angle * 2 + layer * Math.PI * 2) * twist * 15 * tone.pitch;
+
+      x += Math.sin(angle * 3 + layer * 5) * twist * tone.brightness * 14;
+      y += Math.cos(angle * 2 - layer * 4) * twist * tone.pitch * 14;
+
+      curvePoints.push(new THREE.Vector3(x, y, z));
+    }
+
+    points.push(curvePoints);
+  }
+
+  const group = new THREE.Group();
+
+  points.forEach(curvePoints => {
+    const curve = new THREE.CatmullRomCurve3(curvePoints, true);
+    const geo = new THREE.TubeGeometry(curve, density, tube, 8, true);
+    group.add(new THREE.Mesh(geo, material()));
+  });
+
+  return group;
+}
+
+function material() {
+  return new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    metalness: 0.25,
+    roughness: 0.28
+  });
+}
+
+function generateModel() {
+  if (!font) return;
+
+  if (modelGroup) scene.remove(modelGroup);
+
+  modelGroup = new THREE.Group();
+
+  const text = (lettersInput.value || "A")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
+
+  const spacing = 150;
+  const totalWidth = (text.length - 1) * spacing;
+
+  for (let i = 0; i < text.length; i++) {
+    const x = i * spacing - totalWidth / 2;
+
+    const letter = createLetterOutline(text[i], x);
+    const wave = createSoundWave(i, x, letter.width, letter.height);
+
+    modelGroup.add(letter.group);
+    modelGroup.add(wave);
+  }
+
+  scene.add(modelGroup);
+
+  modelGroup.rotation.x = -0.15;
+  modelGroup.rotation.y = 0.25;
+
+  stlText = toSTL(modelGroup, "voice_letter_wave");
+}
+
+function toSTL(group, name) {
+  group.updateMatrixWorld(true);
+
+  let stl = `solid ${name}\n`;
+
+  group.traverse(obj => {
+    if (!obj.isMesh) return;
+
+    const geo = obj.geometry.clone();
+    geo.applyMatrix4(obj.matrixWorld);
+
+    const pos = geo.getAttribute("position");
+    const index = geo.index;
+    const normal = new THREE.Vector3();
+    const a = new THREE.Vector3();
+    const b = new THREE.Vector3();
+    const c = new THREE.Vector3();
+
+    const faces = index ? index.count / 3 : pos.count / 3;
+
+    for (let i = 0; i < faces; i++) {
+      const ia = index ? index.getX(i * 3) : i * 3;
+      const ib = index ? index.getX(i * 3 + 1) : i * 3 + 1;
+      const ic = index ? index.getX(i * 3 + 2) : i * 3 + 2;
+
+      a.fromBufferAttribute(pos, ia);
+      b.fromBufferAttribute(pos, ib);
+      c.fromBufferAttribute(pos, ic);
+
+      normal.crossVectors(
+        new THREE.Vector3().subVectors(b, a),
+        new THREE.Vector3().subVectors(c, a)
+      ).normalize();
+
+      stl += ` facet normal ${normal.x} ${normal.y} ${normal.z}\n`;
+      stl += `  outer loop\n`;
+      stl += `   vertex ${a.x} ${a.y} ${a.z}\n`;
+      stl += `   vertex ${b.x} ${b.y} ${b.z}\n`;
+      stl += `   vertex ${c.x} ${c.y} ${c.z}\n`;
+      stl += `  endloop\n`;
+      stl += ` endfacet\n`;
+    }
+  });
+
+  stl += `endsolid ${name}`;
+  return stl;
+}
+
+downloadBtn.onclick = () => {
+  stlText = toSTL(modelGroup, "voice_letter_wave");
+
+  const blob = new Blob([stlText], { type: "model/stl" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "voice-letter-wave.stl";
+  link.click();
+  URL.revokeObjectURL(link.href);
+};
+
+resetBtn.onclick = () => {
+  lettersInput.value = "A";
+  densitySlider.value = 72;
+  distanceSlider.value = 34;
+  waveSlider.value = 22;
+  twistSlider.value = 1.2;
+  thicknessSlider.value = 1.4;
+  depthSlider.value = 3;
+  toneData = defaultTone();
+  updateLabels();
+  generateModel();
 };
 
 [
   lettersInput,
   densitySlider,
   distanceSlider,
+  waveSlider,
   twistSlider,
-  morphSlider,
-  outlineSlider
+  thicknessSlider,
+  depthSlider
 ].forEach(el => {
   el.addEventListener("input", () => {
-    densityValue.textContent = densitySlider.value;
-    distanceValue.textContent = distanceSlider.value;
-    twistValue.textContent = twistSlider.value;
-    morphValue.textContent = morphSlider.value;
-    outlineValue.textContent = outlineSlider.value;
-    draw();
+    updateLabels();
+    generateModel();
   });
 });
 
-exportPngBtn.onclick = () => {
-  const link = document.createElement("a");
-  link.download = "voice-letter-wave.png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-};
-
-resetBtn.onclick = () => {
-  lettersInput.value = "FLOW";
-  densitySlider.value = 72;
-  distanceSlider.value = 70;
-  twistSlider.value = 1.2;
-  morphSlider.value = 0.8;
-  outlineSlider.value = 5;
-  toneData = defaultTone();
-
-  densityValue.textContent = densitySlider.value;
-  distanceValue.textContent = distanceSlider.value;
-  twistValue.textContent = twistSlider.value;
-  morphValue.textContent = morphSlider.value;
-  outlineValue.textContent = outlineSlider.value;
-
-  draw();
-};
-
-toneData = defaultTone();
-resizeCanvas();
+generateBtn.onclick = generateModel;
 </script>
 </body>
 </html>
