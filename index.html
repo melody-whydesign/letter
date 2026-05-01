@@ -1,403 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Letter Soundwave Pendant</title>
-<style>
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    height:100vh;
-    overflow:hidden;
-    font-family:Helvetica,Arial,sans-serif;
-    background:#f7d000;
-    color:#222;
-  }
-  .app{
-    height:100vh;
-    display:grid;
-    grid-template-columns:360px 1fr;
-    gap:22px;
-    padding:22px;
-  }
-  .panel,.stage{
-    background:rgba(255,255,255,.92);
-    border-radius:28px;
-    box-shadow:0 24px 70px rgba(0,0,0,.16);
-    overflow:hidden;
-  }
-  .panel{
-    padding:26px;
-    overflow:auto;
-  }
-  h1{
-    margin:0 0 22px;
-    font-size:30px;
-    letter-spacing:-.04em;
-  }
-  label{
-    display:block;
-    margin-top:18px;
-    font-weight:800;
-  }
-  input,textarea,button{
-    font-family:Helvetica,Arial,sans-serif;
-  }
-  textarea{
-    width:100%;
-    height:80px;
-    margin-top:8px;
-    padding:14px;
-    border-radius:14px;
-    border:1px solid #ddd;
-    font-size:32px;
-    font-weight:800;
-    text-transform:uppercase;
-    resize:none;
-  }
-  input[type="range"]{
-    width:100%;
-    accent-color:#111;
-  }
-  button{
-    width:100%;
-    height:48px;
-    margin-top:10px;
-    border:0;
-    border-radius:14px;
-    background:#111;
-    color:white;
-    font-size:16px;
-    font-weight:800;
-    cursor:pointer;
-  }
-  button.secondary{background:#777}
-  button.blue{background:#0071e3}
-  button.red{background:#d70015}
-  button:disabled{opacity:.35;cursor:not-allowed}
-  .value{
-    float:right;
-    color:#777;
-    font-size:13px;
-  }
-  .hint{
-    margin-top:20px;
-    color:#666;
-    font-size:14px;
-    line-height:1.45;
-  }
-  .stage{
-    position:relative;
-    background:#050505;
-  }
-  canvas{
-    width:100%;
-    height:100%;
-    display:block;
-  }
-  .badge{
-    position:absolute;
-    top:22px;
-    left:22px;
-    background:rgba(255,255,255,.86);
-    border-radius:999px;
-    padding:10px 16px;
-    font-size:13px;
-    font-weight:800;
-    color:#444;
-  }
-</style>
-</head>
-
-<body>
-<div class="app">
-  <aside class="panel">
-    <h1>Letter Soundwave</h1>
-
-    <label>
-      Letters
-    </label>
-    <textarea id="textInput" maxlength="8">FLOW</textarea>
-
-    <button id="recordBtn" class="red">Start Recording</button>
-    <button id="stopBtn" class="secondary" disabled>Stop Recording</button>
-    <button id="playBtn" disabled>Play Recording</button>
-
-    <label>
-      Wave intensity
-      <span class="value" id="intensityValue">42</span>
-    </label>
-    <input id="intensity" type="range" min="5" max="100" value="42" />
-
-    <label>
-      Wave density
-      <span class="value" id="densityValue">160</span>
-    </label>
-    <input id="density" type="range" min="40" max="320" value="160" />
-
-    <label>
-      Surround distance
-      <span class="value" id="distanceValue">34</span>
-    </label>
-    <input id="distance" type="range" min="8" max="90" value="34" />
-
-    <label>
-      Letter outline thickness
-      <span class="value" id="strokeValue">6</span>
-    </label>
-    <input id="stroke" type="range" min="1" max="18" value="6" />
-
-    <button id="downloadSvgBtn" class="blue">Download SVG</button>
-
-    <p class="hint">
-      Type letters, then record a voice. The preview uses uppercase Helvetica outline letters.
-      The surrounding wave is generated from both volume and tone / pitch, so different voices create different shapes.
-    </p>
-  </aside>
-
-  <section class="stage">
-    <div class="badge">Helvetica outline letterform · 環繞式 soundwave</div>
-    <canvas id="preview"></canvas>
-  </section>
-</div>
-
 <script>
-const canvas = document.getElementById("preview");
-const ctx = canvas.getContext("2d");
-
-const textInput = document.getElementById("textInput");
-const recordBtn = document.getElementById("recordBtn");
-const stopBtn = document.getElementById("stopBtn");
-const playBtn = document.getElementById("playBtn");
-const downloadSvgBtn = document.getElementById("downloadSvgBtn");
-
-const intensity = document.getElementById("intensity");
-const density = document.getElementById("density");
-const distance = document.getElementById("distance");
-const stroke = document.getElementById("stroke");
-
-let mediaRecorder;
-let audioChunks = [];
-let audioBuffer = null;
-let audioUrl = null;
-let audio = new Audio();
-
-let voiceData = makeDefaultVoiceData();
-
-function resize(){
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = canvas.clientWidth * dpr;
-  canvas.height = canvas.clientHeight * dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  draw();
-}
-window.addEventListener("resize", resize);
-
-function updateLabels(){
-  intensityValue.textContent = intensity.value;
-  densityValue.textContent = density.value;
-  distanceValue.textContent = distance.value;
-  strokeValue.textContent = stroke.value;
-}
-
-[textInput,intensity,density,distance,stroke].forEach(el=>{
-  el.addEventListener("input",()=>{
-    textInput.value = textInput.value.toUpperCase();
-    updateLabels();
-    draw();
-  });
-});
-
-recordBtn.onclick = async ()=>{
-  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  audioChunks = [];
-  mediaRecorder = new MediaRecorder(stream);
-
-  mediaRecorder.ondataavailable = e=>{
-    if(e.data.size) audioChunks.push(e.data);
-  };
-
-  mediaRecorder.onstop = async ()=>{
-    stream.getTracks().forEach(t=>t.stop());
-
-    const blob = new Blob(audioChunks,{type:"audio/webm"});
-    if(audioUrl) URL.revokeObjectURL(audioUrl);
-    audioUrl = URL.createObjectURL(blob);
-    audio.src = audioUrl;
-
-    const arr = await blob.arrayBuffer();
-    const ac = new AudioContext();
-    audioBuffer = await ac.decodeAudioData(arr);
-    voiceData = analyzeVoice(audioBuffer, Number(density.value));
-    draw();
-
-    playBtn.disabled = false;
-  };
-
-  mediaRecorder.start();
-  recordBtn.disabled = true;
-  stopBtn.disabled = false;
-};
-
-stopBtn.onclick = ()=>{
-  mediaRecorder.stop();
-  recordBtn.disabled = false;
-  stopBtn.disabled = true;
-};
-
-playBtn.onclick = ()=>{
-  audio.currentTime = 0;
-  audio.play();
-};
-
-function makeDefaultVoiceData(){
-  const arr = [];
-  for(let i=0;i<200;i++){
-    arr.push({
-      amp:.35 + .25*Math.sin(i*.18),
-      pitch:.45 + .35*Math.sin(i*.071)
-    });
-  }
-  return arr;
-}
-
-function analyzeVoice(buffer, samples){
-  const raw = buffer.getChannelData(0);
-  const sr = buffer.sampleRate;
-  const block = Math.floor(raw.length / samples);
-  const data = [];
-
-  for(let i=0;i<samples;i++){
-    const start = i * block;
-    const end = Math.min(raw.length, start + block);
-
-    let rms = 0;
-    for(let j=start;j<end;j++){
-      rms += raw[j] * raw[j];
-    }
-    rms = Math.sqrt(rms / Math.max(1,end-start));
-
-    const pitch = estimatePitch(raw.slice(start,end), sr);
-
-    data.push({
-      amp: Math.min(1, rms * 10),
-      pitch: pitch ? Math.min(1, Math.max(0, (pitch - 80) / 620)) : .25
-    });
-  }
-
-  return smoothVoice(data);
-}
-
-function estimatePitch(buf, sampleRate){
-  let size = buf.length;
-  let rms = 0;
-
-  for(let i=0;i<size;i++) rms += buf[i]*buf[i];
-  rms = Math.sqrt(rms/size);
-  if(rms < .01) return 0;
-
-  let bestOffset = -1;
-  let bestCorrelation = 0;
-  const minOffset = Math.floor(sampleRate / 800);
-  const maxOffset = Math.floor(sampleRate / 70);
-
-  for(let offset=minOffset; offset<maxOffset; offset++){
-    let correlation = 0;
-    for(let i=0;i<size-offset;i++){
-      correlation += 1 - Math.abs(buf[i] - buf[i+offset]);
-    }
-    correlation /= size;
-
-    if(correlation > bestCorrelation){
-      bestCorrelation = correlation;
-      bestOffset = offset;
-    }
-  }
-
-  if(bestCorrelation > .75){
-    return sampleRate / bestOffset;
-  }
-  return 0;
-}
-
-function smoothVoice(data){
-  return data.map((d,i)=>{
-    const a = data[Math.max(0,i-1)];
-    const b = data[Math.min(data.length-1,i+1)];
-    return {
-      amp:(a.amp+d.amp+b.amp)/3,
-      pitch:(a.pitch+d.pitch+b.pitch)/3
-    };
-  });
-}
-
-function draw(){
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-
-  ctx.clearRect(0,0,w,h);
-  ctx.fillStyle = "#050505";
-  ctx.fillRect(0,0,w,h);
-
-  const letters = (textInput.value || "A")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g,"")
-    .slice(0,8)
-    .split("");
-
-  if(!letters.length) return;
-
-  const cols = letters.length <= 3 ? letters.length : Math.ceil(Math.sqrt(letters.length));
-  const rows = Math.ceil(letters.length / cols);
-
-  const marginX = w * .09;
-  const marginY = h * .16;
-  const cellW = (w - marginX*2) / cols;
-  const cellH = (h - marginY*2) / rows;
-
-  letters.forEach((letter,i)=>{
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const cx = marginX + cellW * col + cellW/2;
-    const cy = marginY + cellH * row + cellH/2;
-
-    drawLetterUnit(letter,cx,cy,cellW,cellH,i);
-  });
-}
-
-function drawLetterUnit(letter,cx,cy,cellW,cellH,index){
-  const fontSize = Math.min(cellW, cellH) * .78;
-  const outline = Number(stroke.value);
-  const surround = Number(distance.value);
-  const power = Number(intensity.value);
-
-  ctx.save();
-  ctx.font = `900 ${fontSize}px Helvetica, Arial, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const metrics = ctx.measureText(letter);
-  const letterW = metrics.width;
-  const letterH = fontSize * .78;
-
-  const rx = letterW/2 + surround;
-  const ry = letterH/2 + surround;
-
-  drawSurroundWave(cx,cy,rx,ry,index,power);
-
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "white";
-  ctx.lineWidth = outline;
-  ctx.strokeText(letter,cx,cy + fontSize*.04);
-
-  ctx.restore();
-}
-
 function drawSurroundWave(cx,cy,rx,ry,index,power){
   const count = Number(density.value);
-  const phase = index * 37;
+  const phase = index * 41;
   const points = [];
 
   for(let i=0;i<=count;i++){
@@ -406,34 +10,71 @@ function drawSurroundWave(cx,cy,rx,ry,index,power){
 
     const d = voiceData[(i + phase) % voiceData.length] || {amp:.4,pitch:.4};
 
-    const toneRipple = Math.sin(a * (4 + d.pitch * 18) + d.pitch * 12);
-    const ampRipple = d.amp * power;
-    const pitchRipple = toneRipple * power * d.pitch * .42;
+    const twist =
+      Math.sin(a * 3 + d.pitch * 9 + index) * d.pitch * .38 +
+      Math.sin(a * 7 + d.amp * 5) * d.amp * .18;
 
-    const offset = ampRipple + pitchRipple;
+    const aa = a + twist;
 
-    const x = cx + Math.cos(a) * (rx + offset);
-    const y = cy + Math.sin(a) * (ry + offset);
+    const squareMorph = Math.max(
+      Math.abs(Math.cos(aa)),
+      Math.abs(Math.sin(aa))
+    );
+
+    const letterInfluence =
+      .72 +
+      .28 * Math.sin(aa * 2 + index) +
+      .16 * Math.sin(aa * 5 + d.pitch * 8);
+
+    const baseX = Math.cos(aa) * rx / squareMorph;
+    const baseY = Math.sin(aa) * ry / squareMorph;
+
+    const toneWave =
+      Math.sin(aa * (5 + d.pitch * 20) + d.pitch * 14) *
+      power *
+      d.pitch *
+      .55;
+
+    const volumeWave = d.amp * power;
+
+    const breathe =
+      Math.sin(a * 2 + index * 1.7) *
+      power *
+      .12;
+
+    const offset = volumeWave + toneWave + breathe;
+
+    const nx = baseX / rx;
+    const ny = baseY / ry;
+
+    const x = cx + baseX * letterInfluence + nx * offset;
+    const y = cy + baseY * letterInfluence + ny * offset;
 
     points.push({x,y});
   }
 
   ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,.94)";
-  ctx.lineWidth = 1.15;
+  ctx.strokeStyle = "rgba(255,255,255,.95)";
+  ctx.lineWidth = 1.1;
 
-  for(let layer=0; layer<18; layer++){
-    const scale = 1 - layer * .012;
-    const alpha = 1 - layer * .045;
+  for(let layer=0; layer<24; layer++){
+    const scale = 1 - layer * .011;
+    const shift = layer * .012;
+    const alpha = 1 - layer * .038;
 
     ctx.globalAlpha = alpha;
     ctx.beginPath();
 
     points.forEach((p,i)=>{
-      const x = cx + (p.x - cx) * scale;
-      const y = cy + (p.y - cy) * scale;
-      if(i===0) ctx.moveTo(x,y);
-      else ctx.lineTo(x,y);
+      const px = cx + (p.x - cx) * scale;
+      const py = cy + (p.y - cy) * scale;
+
+      const angle = Math.atan2(py-cy, px-cx);
+      const twistX = Math.cos(angle + shift * 8) * layer * .42;
+      const twistY = Math.sin(angle - shift * 8) * layer * .42;
+
+      if(i===0) ctx.moveTo(px + twistX, py + twistY);
+      else ctx.lineTo(px + twistX, py + twistY);
     });
 
     ctx.closePath();
@@ -443,83 +84,59 @@ function drawSurroundWave(cx,cy,rx,ry,index,power){
   ctx.restore();
 }
 
-function createSVG(){
-  const w = 1200;
-  const h = 1200;
-  const letters = (textInput.value || "A")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g,"")
-    .slice(0,8)
-    .split("");
-
-  const cols = letters.length <= 3 ? letters.length : Math.ceil(Math.sqrt(letters.length));
-  const rows = Math.ceil(letters.length / cols);
-
-  const marginX = w * .09;
-  const marginY = h * .16;
-  const cellW = (w - marginX*2) / cols;
-  const cellH = (h - marginY*2) / rows;
-
-  let svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-<rect width="100%" height="100%" fill="black"/>
-`;
-
-  letters.forEach((letter,i)=>{
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const cx = marginX + cellW * col + cellW/2;
-    const cy = marginY + cellH * row + cellH/2;
-    const fontSize = Math.min(cellW, cellH) * .78;
-
-    const approxW = fontSize * .68;
-    const approxH = fontSize * .78;
-    const rx = approxW/2 + Number(distance.value);
-    const ry = approxH/2 + Number(distance.value);
-
-    const path = makeWavePath(cx,cy,rx,ry,i,Number(intensity.value),Number(density.value));
-
-    svg += `<path d="${path}" fill="none" stroke="white" stroke-width="2"/>\n`;
-    svg += `<text x="${cx}" y="${cy + fontSize*.34}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="${fontSize}" font-weight="900" fill="none" stroke="white" stroke-width="${stroke.value}" stroke-linejoin="round">${letter}</text>\n`;
-  });
-
-  svg += `</svg>`;
-  return svg;
-}
-
 function makeWavePath(cx,cy,rx,ry,index,power,count){
-  const phase = index * 37;
+  const phase = index * 41;
   let dString = "";
 
   for(let i=0;i<=count;i++){
     const t = i / count;
     const a = t * Math.PI * 2;
+
     const d = voiceData[(i + phase) % voiceData.length] || {amp:.4,pitch:.4};
 
-    const toneRipple = Math.sin(a * (4 + d.pitch * 18) + d.pitch * 12);
-    const offset = d.amp * power + toneRipple * power * d.pitch * .42;
+    const twist =
+      Math.sin(a * 3 + d.pitch * 9 + index) * d.pitch * .38 +
+      Math.sin(a * 7 + d.amp * 5) * d.amp * .18;
 
-    const x = cx + Math.cos(a) * (rx + offset);
-    const y = cy + Math.sin(a) * (ry + offset);
+    const aa = a + twist;
+
+    const squareMorph = Math.max(
+      Math.abs(Math.cos(aa)),
+      Math.abs(Math.sin(aa))
+    );
+
+    const letterInfluence =
+      .72 +
+      .28 * Math.sin(aa * 2 + index) +
+      .16 * Math.sin(aa * 5 + d.pitch * 8);
+
+    const baseX = Math.cos(aa) * rx / squareMorph;
+    const baseY = Math.sin(aa) * ry / squareMorph;
+
+    const toneWave =
+      Math.sin(aa * (5 + d.pitch * 20) + d.pitch * 14) *
+      power *
+      d.pitch *
+      .55;
+
+    const volumeWave = d.amp * power;
+
+    const breathe =
+      Math.sin(a * 2 + index * 1.7) *
+      power *
+      .12;
+
+    const offset = volumeWave + toneWave + breathe;
+
+    const nx = baseX / rx;
+    const ny = baseY / ry;
+
+    const x = cx + baseX * letterInfluence + nx * offset;
+    const y = cy + baseY * letterInfluence + ny * offset;
 
     dString += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
   }
 
   return dString + " Z";
 }
-
-downloadSvgBtn.onclick = ()=>{
-  const svg = createSVG();
-  const blob = new Blob([svg],{type:"image/svg+xml"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "letter-soundwave.svg";
-  a.click();
-  URL.revokeObjectURL(a.href);
-};
-
-updateLabels();
-resize();
 </script>
-</body>
-</html>
