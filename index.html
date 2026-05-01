@@ -1,76 +1,525 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Voice Letter Wave Studio</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <style>
-    :root{--yellow:#f7d000;--panel:rgba(255,255,255,.92);--text:#303236;--muted:#71757b;--blue:#0071e3;--shadow:0 24px 70px rgba(0,0,0,.15);--radius:28px}
-    *{box-sizing:border-box} body{margin:0;height:100vh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;background:var(--yellow);color:var(--text)}
-    .app{height:100vh;padding:22px;display:grid;grid-template-columns:405px 1fr;gap:22px}.panel,.stage{border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow);overflow:hidden}.panel{padding:26px;overflow-y:auto;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,250,225,.9))}.stage{position:relative;background:#050505}h1{font-size:30px;letter-spacing:-.04em;margin:0 0 18px}.sub{font-size:14px;line-height:1.45;color:var(--muted);margin:0 0 18px}.button{width:100%;height:50px;border:0;border-radius:12px;margin:7px 0;color:#fff;font-weight:760;font-size:16px;background:linear-gradient(180deg,#28282b,#111);cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.12),0 8px 22px rgba(0,0,0,.13)}.button:disabled{opacity:.35;cursor:not-allowed}.button.primary{background:linear-gradient(180deg,#0077ed,#0063c8)}.button.subtle{background:linear-gradient(180deg,#a2a2a8,#85858c)}.button.recording{background:linear-gradient(180deg,#ff453a,#d70015)}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff3b30;margin-right:8px}.timer{text-align:center;font-size:34px;font-weight:800;margin:18px 0 12px;font-variant-numeric:tabular-nums}
-    .field{margin:18px 0}.field label{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:15px;font-weight:800}.field span{font-size:12px;color:var(--muted);font-weight:750}.field input[type=text]{width:100%;height:48px;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:0 14px;font-size:20px;font-weight:850;text-transform:uppercase;letter-spacing:.04em;background:#fff;color:#111}.field select{width:100%;height:44px;border:1px solid rgba(0,0,0,.12);border-radius:13px;background:#fff;padding:0 12px;font-weight:750}.field input[type=range]{width:100%;accent-color:#343a40}
-    .wave-card{position:relative;border-radius:18px;background:#fff;overflow:hidden;border:1px solid rgba(0,0,0,.07);margin-bottom:12px}#waveform{display:block;width:100%;height:108px;cursor:crosshair}.crop-overlay{pointer-events:none;position:absolute;inset:0}.crop-region{position:absolute;top:0;bottom:0;background:rgba(0,113,227,.13);border-left:2px solid var(--blue);border-right:2px solid var(--blue);border-radius:8px}.playhead{position:absolute;top:0;bottom:0;width:2px;background:#222;display:none}.crop-times{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;font-weight:750;color:var(--muted);font-variant-numeric:tabular-nums}.time-pill{background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.06);border-radius:999px;padding:8px;text-align:center}.playback-label{display:flex;justify-content:space-between;margin:14px 0 6px;font-size:13px;font-weight:750;color:var(--muted)}.selection-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.small-button{height:38px;border-radius:999px;border:1px solid rgba(0,0,0,.08);background:#fff;font-weight:750;color:var(--text);cursor:pointer}.hint{font-size:13px;line-height:1.45;color:var(--muted);margin-top:18px}.stage-badge{position:absolute;left:26px;top:24px;z-index:2;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);font-weight:750;font-size:13px;color:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.12)}#viewer{width:100%;height:100%;display:block;cursor:grab}.loading{position:absolute;inset:0;display:none;place-items:center;background:rgba(0,0,0,.34);backdrop-filter:blur(8px);font-weight:800;color:white}.colour-options{display:flex;gap:13px;margin-top:12px}.colour-swatch{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.14);background:var(--swatch);cursor:pointer;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 1px 3px rgba(0,0,0,.18)}.colour-swatch.active{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(0,0,0,.32)}
-    @media(max-width:920px){body{overflow:auto}.app{height:auto;grid-template-columns:1fr}.stage{height:64vh;min-height:480px}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Letter Soundwave Pendant</title>
+<style>
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    height:100vh;
+    overflow:hidden;
+    font-family:Helvetica,Arial,sans-serif;
+    background:#f7d000;
+    color:#222;
+  }
+  .app{
+    height:100vh;
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:22px;
+    padding:22px;
+  }
+  .panel,.stage{
+    background:rgba(255,255,255,.92);
+    border-radius:28px;
+    box-shadow:0 24px 70px rgba(0,0,0,.16);
+    overflow:hidden;
+  }
+  .panel{
+    padding:26px;
+    overflow:auto;
+  }
+  h1{
+    margin:0 0 22px;
+    font-size:30px;
+    letter-spacing:-.04em;
+  }
+  label{
+    display:block;
+    margin-top:18px;
+    font-weight:800;
+  }
+  input,textarea,button{
+    font-family:Helvetica,Arial,sans-serif;
+  }
+  textarea{
+    width:100%;
+    height:80px;
+    margin-top:8px;
+    padding:14px;
+    border-radius:14px;
+    border:1px solid #ddd;
+    font-size:32px;
+    font-weight:800;
+    text-transform:uppercase;
+    resize:none;
+  }
+  input[type="range"]{
+    width:100%;
+    accent-color:#111;
+  }
+  button{
+    width:100%;
+    height:48px;
+    margin-top:10px;
+    border:0;
+    border-radius:14px;
+    background:#111;
+    color:white;
+    font-size:16px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  button.secondary{background:#777}
+  button.blue{background:#0071e3}
+  button.red{background:#d70015}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  .value{
+    float:right;
+    color:#777;
+    font-size:13px;
+  }
+  .hint{
+    margin-top:20px;
+    color:#666;
+    font-size:14px;
+    line-height:1.45;
+  }
+  .stage{
+    position:relative;
+    background:#050505;
+  }
+  canvas{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+  .badge{
+    position:absolute;
+    top:22px;
+    left:22px;
+    background:rgba(255,255,255,.86);
+    border-radius:999px;
+    padding:10px 16px;
+    font-size:13px;
+    font-weight:800;
+    color:#444;
+  }
+</style>
 </head>
+
 <body>
-<main class="app">
+<div class="app">
   <aside class="panel">
-    <h1>Voice Letter Wave</h1>
-    <p class="sub">Type letters, record a voice, then generate sculptural line-waves driven by pitch/tone. Louder audio is not the main driver.</p>
-    <div class="field"><label>Letters <span id="letterCount">LOVE</span></label><input id="textInput" type="text" maxlength="8" value="LOVE" /></div>
-    <button id="startBtn" class="button"><span class="dot"></span>Start Recording</button><button id="stopBtn" class="button subtle" disabled>Stop Recording</button><button id="playBtn" class="button" disabled>Play Recording</button>
-    <div class="timer" id="timer">00:00</div>
-    <div class="wave-card"><canvas id="waveform"></canvas><div class="crop-overlay"><div id="cropRegion" class="crop-region"></div><div id="playhead" class="playhead"></div></div></div>
-    <div class="crop-times"><div class="time-pill">Start: <span id="cropStart">0.00s</span></div><div class="time-pill">End: <span id="cropEnd">0.00s</span></div></div>
-    <div class="playback-label"><span>Playback</span><span id="playbackTime">0.00s / 0.00s</span></div><input id="playbackBar" type="range" min="0" max="0" step="0.01" value="0" disabled />
-    <div class="selection-tools"><button id="selectAllBtn" class="small-button" disabled>Select All</button><button id="centerViewBtn" class="small-button">Center View</button></div>
-    <button id="generateBtn" class="button primary">Generate Letter Wave</button><button id="downloadBtn" class="button" disabled>Download STL</button><button id="resetBtn" class="button subtle">Reset</button>
-    <div class="field"><label>Layout <span id="layoutValue">Grid</span></label><select id="layoutSelect"><option value="grid">Grid, like reference image</option><option value="row">Single row</option><option value="circle">Circular pendant</option></select></div>
-    <div class="field"><label>Letter size <span id="sizeValue">42 mm</span></label><input id="sizeSlider" type="range" min="24" max="90" value="42"></div>
-    <div class="field"><label>Stroke thickness <span id="strokeValue">4.0 mm</span></label><input id="strokeSlider" type="range" min="1.5" max="8" step="0.1" value="4"></div>
-    <div class="field"><label>Wave detail <span id="detailValue">84 lines</span></label><input id="detailSlider" type="range" min="24" max="160" value="84"></div>
-    <div class="field"><label>Tone sensitivity <span id="toneValue">1.15</span></label><input id="toneSlider" type="range" min="0.2" max="2.8" step="0.05" value="1.15"></div>
-    <div class="field"><label>Wave height <span id="heightValue">18 mm</span></label><input id="heightSlider" type="range" min="4" max="45" value="18"></div>
-    <div class="field"><label>Line tube radius <span id="tubeValue">0.45 mm</span></label><input id="tubeSlider" type="range" min="0.15" max="1.2" step="0.05" value="0.45"></div>
-    <div class="field"><label>Color <span id="colourValue">White</span></label><div class="colour-options"><button class="colour-swatch active" data-colour="white" style="--swatch:#f7f7f7"></button><button class="colour-swatch" data-colour="silver" style="--swatch:#cfd6da"></button><button class="colour-swatch" data-colour="gold" style="--swatch:#e7c25a"></button><button class="colour-swatch" data-colour="black" style="--swatch:#2c2c2e"></button></div></div>
-    <p class="hint">This prototype estimates pitch with autocorrelation and uses pitch changes to bend the sound-wave ribbons around the letters. For best results, record one clear spoken word or phrase.</p>
+    <h1>Letter Soundwave</h1>
+
+    <label>
+      Letters
+    </label>
+    <textarea id="textInput" maxlength="8">FLOW</textarea>
+
+    <button id="recordBtn" class="red">Start Recording</button>
+    <button id="stopBtn" class="secondary" disabled>Stop Recording</button>
+    <button id="playBtn" disabled>Play Recording</button>
+
+    <label>
+      Wave intensity
+      <span class="value" id="intensityValue">42</span>
+    </label>
+    <input id="intensity" type="range" min="5" max="100" value="42" />
+
+    <label>
+      Wave density
+      <span class="value" id="densityValue">160</span>
+    </label>
+    <input id="density" type="range" min="40" max="320" value="160" />
+
+    <label>
+      Surround distance
+      <span class="value" id="distanceValue">34</span>
+    </label>
+    <input id="distance" type="range" min="8" max="90" value="34" />
+
+    <label>
+      Letter outline thickness
+      <span class="value" id="strokeValue">6</span>
+    </label>
+    <input id="stroke" type="range" min="1" max="18" value="6" />
+
+    <button id="downloadSvgBtn" class="blue">Download SVG</button>
+
+    <p class="hint">
+      Type letters, then record a voice. The preview uses uppercase Helvetica outline letters.
+      The surrounding wave is generated from both volume and tone / pitch, so different voices create different shapes.
+    </p>
   </aside>
-  <section class="stage"><div class="stage-badge">Drag to rotate 360° • Pitch-based voice wave</div><canvas id="viewer"></canvas><div class="loading" id="loading">Generating…</div></section>
-</main>
+
+  <section class="stage">
+    <div class="badge">Helvetica outline letterform · 環繞式 soundwave</div>
+    <canvas id="preview"></canvas>
+  </section>
+</div>
+
 <script>
-const $=id=>document.getElementById(id); const els=['textInput','letterCount','startBtn','stopBtn','playBtn','generateBtn','downloadBtn','resetBtn','timer','waveform','cropRegion','playhead','cropStart','cropEnd','playbackBar','playbackTime','selectAllBtn','centerViewBtn','layoutSelect','layoutValue','sizeSlider','strokeSlider','detailSlider','toneSlider','heightSlider','tubeSlider','sizeValue','strokeValue','detailValue','toneValue','heightValue','tubeValue','colourValue','loading','viewer']; els.forEach(id=>window[id]=$(id));
-const state={colour:'white',mesh:null,stlText:'',audio:new Audio(),audioChunks:[],audioBlob:null,audioBuffer:null,audioUrl:null,duration:0,cropStart:0,cropEnd:0,isRecording:false,mediaRecorder:null,stream:null,analyser:null,audioContext:null,sourceNode:null,liveData:[],waveformData:[],pitchData:[],isDraggingCrop:false,dragStartRatio:0,isPointerRotating:false,lastPointerX:0,lastPointerY:0};
-const waveCtx=waveform.getContext('2d'); const swatches=document.querySelectorAll('.colour-swatch');
-function fmt(sec){return !Number.isFinite(sec)?'0.00s':sec<60?`${sec.toFixed(2)}s`:`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(Math.floor(sec%60)).padStart(2,'0')}`}function timerFmt(sec){return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(Math.floor(sec%60)).padStart(2,'0')}`}
-function resizeWave(){const r=waveform.getBoundingClientRect(),d=devicePixelRatio||1;waveform.width=r.width*d;waveform.height=r.height*d;waveCtx.setTransform(d,0,0,d,0,0);drawWave()}function roundRect(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
-function drawWave(){const r=waveform.getBoundingClientRect(),w=r.width,h=r.height;waveCtx.clearRect(0,0,w,h);waveCtx.fillStyle='#fff';waveCtx.fillRect(0,0,w,h);const data=state.isRecording?state.liveData:state.waveformData,bars=Math.max(48,Math.floor(w/5)),gap=3,bw=Math.max(1,w/bars-gap),c=h/2;for(let i=0;i<bars;i++){const idx=Math.floor(i/bars*Math.max(1,data.length)),amp=data[idx]||.02,bh=Math.max(4,amp*h*.86),x=i*(bw+gap)+gap/2,y=c-bh/2,inCrop=!state.isRecording&&state.duration>0&&(i/bars)>=state.cropStart/state.duration&&(i/bars)<=state.cropEnd/state.duration;waveCtx.fillStyle=inCrop?'#0071e3':'rgba(29,29,31,.38)';roundRect(waveCtx,x,y,bw,bh,999);waveCtx.fill()}updateCropOverlay();updatePlayhead()}
-function updateCropOverlay(){if(!state.duration||state.isRecording){cropRegion.style.display='none';return}cropRegion.style.display='block';cropRegion.style.left=`${state.cropStart/state.duration*100}%`;cropRegion.style.width=`${Math.max(.5,(state.cropEnd-state.cropStart)/state.duration*100)}%`;cropStart.textContent=fmt(state.cropStart);cropEnd.textContent=fmt(state.cropEnd)}function updatePlayhead(){const cur=Number(playbackBar.value||0),max=Number(playbackBar.max||0);if(!max){playhead.style.display='none';return}playhead.style.display='block';playhead.style.left=`${cur/max*100}%`;playbackTime.textContent=`${fmt(cur)} / ${fmt(max)}`}
-async function startRecording(){try{state.stream=await navigator.mediaDevices.getUserMedia({audio:true});state.audioChunks=[];state.liveData=[];state.isRecording=true;state.audioContext=new(window.AudioContext||window.webkitAudioContext)();state.analyser=state.audioContext.createAnalyser();state.analyser.fftSize=1024;state.sourceNode=state.audioContext.createMediaStreamSource(state.stream);state.sourceNode.connect(state.analyser);state.mediaRecorder=new MediaRecorder(state.stream);state.mediaRecorder.ondataavailable=e=>{if(e.data.size)state.audioChunks.push(e.data)};state.mediaRecorder.onstop=finishRecording;state.mediaRecorder.start();state.recordingStartedAt=performance.now();startBtn.disabled=true;stopBtn.disabled=false;playBtn.disabled=true;selectAllBtn.disabled=true;downloadBtn.disabled=true;startBtn.classList.add('recording');state.recordingTimer=setInterval(()=>timer.textContent=timerFmt((performance.now()-state.recordingStartedAt)/1000),120);animateLive()}catch(e){alert('Microphone permission is required.')}}function stopRecording(){if(state.mediaRecorder&&state.mediaRecorder.state!=='inactive')state.mediaRecorder.stop();state.isRecording=false;clearInterval(state.recordingTimer);startBtn.classList.remove('recording');startBtn.disabled=false;stopBtn.disabled=true;if(state.stream)state.stream.getTracks().forEach(t=>t.stop())}
-async function finishRecording(){state.audioBlob=new Blob(state.audioChunks,{type:'audio/webm'});if(state.audioUrl)URL.revokeObjectURL(state.audioUrl);state.audioUrl=URL.createObjectURL(state.audioBlob);state.audio.src=state.audioUrl;const arr=await state.audioBlob.arrayBuffer(),ctx=new(window.AudioContext||window.webkitAudioContext)();state.audioBuffer=await ctx.decodeAudioData(arr.slice(0));state.duration=state.audioBuffer.duration;state.cropStart=0;state.cropEnd=state.duration;state.waveformData=extractWaveform(state.audioBuffer,220);state.pitchData=extractPitchCurve(state.audioBuffer,220);timer.textContent=timerFmt(state.duration);playbackBar.max=state.duration.toFixed(2);playbackBar.value=0;playbackBar.disabled=false;playBtn.disabled=false;selectAllBtn.disabled=false;drawWave();generateObject(false)}
-function animateLive(){if(!state.isRecording||!state.analyser)return;const b=new Uint8Array(state.analyser.fftSize);state.analyser.getByteTimeDomainData(b);let sum=0;for(const v of b){const c=(v-128)/128;sum+=c*c}state.liveData.push(Math.min(1,Math.sqrt(sum/b.length)*5.4+.03));if(state.liveData.length>180)state.liveData.shift();drawWave();requestAnimationFrame(animateLive)}
-function extractWaveform(buffer,samples){const raw=buffer.getChannelData(0),block=Math.floor(raw.length/samples)||1,data=[];for(let i=0;i<samples;i++){let sum=0,start=i*block;for(let j=0;j<block&&start+j<raw.length;j++){const v=raw[start+j];sum+=v*v}data.push(Math.min(1,Math.sqrt(sum/block)*8))}return data}
-function autoCorrelate(buf,sr){let size=buf.length,rms=0;for(let i=0;i<size;i++){let v=buf[i];rms+=v*v}rms=Math.sqrt(rms/size);if(rms<.012)return 0;let bestOffset=-1,bestCorr=0;const minLag=Math.floor(sr/900),maxLag=Math.floor(sr/70);for(let lag=minLag;lag<=maxLag;lag++){let corr=0;for(let i=0;i<size-lag;i++)corr+=1-Math.abs(buf[i]-buf[i+lag]);corr/=size-lag;if(corr>bestCorr){bestCorr=corr;bestOffset=lag}}return bestCorr>.72?sr/bestOffset:0}
-function extractPitchCurve(buffer,samples){const ch=buffer.getChannelData(0),sr=buffer.sampleRate,win=Math.floor(sr*.045),out=[];for(let i=0;i<samples;i++){const center=Math.floor(i/(samples-1)*(ch.length-1)),start=Math.max(0,center-Math.floor(win/2)),slice=ch.slice(start,Math.min(ch.length,start+win));out.push(autoCorrelate(slice,sr))}let voiced=out.filter(v=>v>0).sort((a,b)=>a-b);const lo=voiced[Math.floor(voiced.length*.08)]||90,hi=voiced[Math.floor(voiced.length*.92)]||450;return out.map((v,i)=>{if(!v)v=i?out[i-1]||lo:lo;return Math.max(0,Math.min(1,(Math.log(v)-Math.log(lo))/(Math.log(hi)-Math.log(lo)||1)))})}
-function playRecording(){if(!state.audioUrl)return;let s=Number(playbackBar.value||0);if(s>=state.duration-.05||state.audio.ended)s=0;state.audio.pause();state.audio.currentTime=s;state.audio.play();playBtn.textContent='Playing…';tickPlayback()}function tickPlayback(){if(!state.audio.paused){playbackBar.value=state.audio.currentTime.toFixed(2);updatePlayhead();requestAnimationFrame(tickPlayback)}}state.audio.onended=()=>{playBtn.textContent='Play Recording';playbackBar.value=state.duration.toFixed(2);updatePlayhead()};playbackBar.oninput=()=>{state.audio.currentTime=Number(playbackBar.value||0);updatePlayhead()};
-function waveRatio(e){const r=waveform.getBoundingClientRect();return Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))}function cropChanged(){drawWave();generateObject(false)}waveform.onpointerdown=e=>{if(!state.duration||state.isRecording)return;state.isDraggingCrop=true;state.dragStartRatio=waveRatio(e);waveform.setPointerCapture(e.pointerId);const t=state.dragStartRatio*state.duration;state.cropStart=t;state.cropEnd=t;cropChanged()};waveform.onpointermove=e=>{if(!state.isDraggingCrop||!state.duration)return;const c=waveRatio(e),a=Math.min(c,state.dragStartRatio)*state.duration,b=Math.max(c,state.dragStartRatio)*state.duration;state.cropStart=a;state.cropEnd=Math.max(a+.1,b);cropChanged()};waveform.onpointerup=()=>{state.isDraggingCrop=false;if(state.cropEnd-state.cropStart<.1)state.cropEnd=Math.min(state.duration,state.cropStart+.5);cropChanged()};selectAllBtn.onclick=()=>{state.cropStart=0;state.cropEnd=state.duration;cropChanged()};
-startBtn.onclick=startRecording;stopBtn.onclick=stopRecording;playBtn.onclick=playRecording;
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x050505);const camera=new THREE.PerspectiveCamera(35,1,.1,1200),renderer=new THREE.WebGLRenderer({canvas:viewer,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputEncoding=THREE.sRGBEncoding;scene.add(new THREE.HemisphereLight(0xffffff,0x101012,.92));let l=new THREE.DirectionalLight(0xffffff,4.8);l.position.set(3.5,5.5,5);scene.add(l);l=new THREE.DirectionalLight(0xffffff,4.5);l.position.set(-5,1.5,4);scene.add(l);l=new THREE.DirectionalLight(0xffffff,2.2);l.position.set(1,-3,-6);scene.add(l);camera.position.set(0,0,210);camera.lookAt(0,0,0);
-function resizeRenderer(){const p=viewer.parentElement,w=p.clientWidth,h=p.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();resizeWave()}window.onresize=resizeRenderer;
-function mat(){const p={white:{color:0xffffff,metalness:.25,roughness:.18,clearcoat:1},silver:{color:0xcfd6da,metalness:.88,roughness:.2,clearcoat:1},gold:{color:0xf2c94c,metalness:.96,roughness:.18,clearcoat:1},black:{color:0x2c2c2e,metalness:.65,roughness:.3,clearcoat:1}}[state.colour];return new THREE.MeshPhysicalMaterial({...p,clearcoatRoughness:.05,reflectivity:1})}
-function labelValues(){letterCount.textContent=textInput.value.toUpperCase()||'A';layoutValue.textContent={grid:'Grid',row:'Row',circle:'Circle'}[layoutSelect.value];sizeValue.textContent=`${sizeSlider.value} mm`;strokeValue.textContent=`${Number(strokeSlider.value).toFixed(1)} mm`;detailValue.textContent=`${detailSlider.value} lines`;toneValue.textContent=Number(toneSlider.value).toFixed(2);heightValue.textContent=`${heightSlider.value} mm`;tubeValue.textContent=`${Number(tubeSlider.value).toFixed(2)} mm`}
-function pathForChar(ch,w,h){const x=-w/2,y=-h/2;const p={A:[[x,y],[0,h/2],[w/2,y],[w*.22,0],[x*.22,0]],B:[[x,y],[x,h/2],[w*.15,h*.42],[w*.38,h*.25],[w*.1,0],[w*.42,-h*.2],[w*.16,-h*.42],[x,y]],C:[[w*.42,h*.38],[w*.05,h*.5],[x,h*.22],[x,-h*.18],[w*.05,-h*.5],[w*.42,-h*.36]],D:[[x,y],[x,h/2],[w*.18,h*.42],[w*.5,h*.12],[w*.5,-h*.12],[w*.18,-h*.42],[x,y]],E:[[w/2,h/2],[x,h/2],[x,0],[w*.28,0],[x,0],[x,y],[w/2,y]],F:[[x,y],[x,h/2],[w/2,h/2],[x,0],[w*.25,0]],G:[[w*.42,h*.34],[w*.08,h*.5],[x,h*.16],[x,-h*.18],[w*.08,-h*.5],[w*.48,-h*.3],[w*.48,-.02],[w*.16,-.02]],H:[[x,y],[x,h/2],[x,0],[w/2,0],[w/2,h/2],[w/2,y]],I:[[x,h/2],[w/2,h/2],[0,h/2],[0,y],[x,y],[w/2,y]],J:[[w/2,h/2],[w/2,-h*.25],[w*.22,-h*.5],[-w*.18,-h*.44],[x,-h*.22]],K:[[x,y],[x,h/2],[x,0],[w/2,h/2],[x,0],[w/2,y]],L:[[x,h/2],[x,y],[w/2,y]],M:[[x,y],[x,h/2],[0,-h*.02],[w/2,h/2],[w/2,y]],N:[[x,y],[x,h/2],[w/2,y],[w/2,h/2]],O:[[0,h/2],[w*.42,h*.32],[w/2,0],[w*.42,-h*.32],[0,y],[x*.84,-h*.32],[x,0],[x*.84,h*.32],[0,h/2]],P:[[x,y],[x,h/2],[w*.16,h*.44],[w*.45,h*.22],[w*.15,0],[x,0]],Q:[[0,h/2],[w*.42,h*.32],[w/2,0],[w*.42,-h*.32],[0,y],[x*.84,-h*.32],[x,0],[x*.84,h*.32],[0,h/2],[w*.2,-h*.25],[w*.5,-h*.5]],R:[[x,y],[x,h/2],[w*.16,h*.44],[w*.45,h*.22],[w*.15,0],[x,0],[w/2,y]],S:[[w*.45,h*.38],[w*.05,h*.5],[x,h*.25],[-w*.12,.05],[w*.25,-.05],[w*.45,-h*.28],[w*.05,-h*.5],[x,-h*.35]],T:[[x,h/2],[w/2,h/2],[0,h/2],[0,y]],U:[[x,h/2],[x,-h*.28],[-w*.22,-h*.5],[w*.22,-h*.5],[w/2,-h*.28],[w/2,h/2]],V:[[x,h/2],[0,y],[w/2,h/2]],W:[[x,h/2],[-w*.28,y],[0,-h*.1],[w*.28,y],[w/2,h/2]],X:[[x,h/2],[w/2,y],[0,0],[w/2,h/2],[x,y]],Y:[[x,h/2],[0,0],[w/2,h/2],[0,0],[0,y]],Z:[[x,h/2],[w/2,h/2],[x,y],[w/2,y]]};return p[ch]||p['O']}
-function makeTube(points,radius,segments=8){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],p[1],p[2])),false,'catmullrom',.25);return new THREE.TubeGeometry(curve,Math.max(2,points.length*5),radius,segments,false)}
-function samplePitch(i,n){if(!state.pitchData.length)return .5+.5*Math.sin(i*.25);const start=state.duration?Math.floor(state.cropStart/state.duration*state.pitchData.length):0,end=state.duration?Math.floor(state.cropEnd/state.duration*state.pitchData.length):state.pitchData.length;const span=Math.max(1,end-start);return state.pitchData[Math.min(state.pitchData.length-1,start+Math.floor(i/n*span))]||.5}
-function letterGroup(ch,cx,cy,scale,globalStart,globalTotal){const group=new THREE.Group(),m=mat(),stroke=Number(strokeSlider.value),waveH=Number(heightSlider.value),tube=Number(tubeSlider.value),detail=Number(detailSlider.value),tone=Number(toneSlider.value);const basePath=pathForChar(ch,scale*.72,scale);for(let k=0;k<basePath.length-1;k++){const [x1,y1]=basePath[k],[x2,y2]=basePath[k+1];const len=Math.hypot(x2-x1,y2-y1),steps=Math.max(4,Math.floor(len/3)),pts=[];for(let s=0;s<=steps;s++){const t=s/steps;pts.push([cx+x1+(x2-x1)*t,cy+y1+(y2-y1)*t,0])}group.add(new THREE.Mesh(makeTube(pts,stroke/2,12),m))}
-  for(let i=0;i<detail;i++){const pitch=samplePitch(globalStart+i,globalTotal);const phase=(pitch-.5)*Math.PI*2*tone;const offset=(i/(detail-1)-.5)*scale*.95;const pts=[];for(let s=0;s<=72;s++){const t=s/72;const x=cx-scale*.48+t*scale*.96;const y=cy+offset+Math.sin(t*Math.PI*2+phase)*waveH*(.18+.82*pitch);const z=(pitch-.5)*waveH*.85+Math.sin(t*Math.PI*4+phase)*waveH*.18;pts.push([x,y,z])}const mesh=new THREE.Mesh(makeTube(pts,tube,8),m);mesh.material.transparent=true;mesh.material.opacity=.92;group.add(mesh)}return group}
-function generateGeometryGroup(){const letters=(textInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'')||'A').slice(0,8).split(''),scale=Number(sizeSlider.value),layout=layoutSelect.value;const group=new THREE.Group();let positions=[];if(layout==='row'){const gap=scale*.95,start=-(letters.length-1)*gap/2;letters.forEach((_,i)=>positions.push([start+i*gap,0]))}else if(layout==='circle'){const r=Math.max(scale*.9,letters.length*scale*.18);letters.forEach((_,i)=>{const a=i/letters.length*Math.PI*2-Math.PI/2;positions.push([Math.cos(a)*r,Math.sin(a)*r])})}else{const cols=Math.ceil(Math.sqrt(letters.length)),rows=Math.ceil(letters.length/cols),gap=scale*1.05;letters.forEach((_,i)=>{const c=i%cols,row=Math.floor(i/cols);positions.push([(c-(cols-1)/2)*gap,((rows-1)/2-row)*gap])})}letters.forEach((ch,i)=>group.add(letterGroup(ch,positions[i][0],positions[i][1],scale,i*Number(detailSlider.value),letters.length*Number(detailSlider.value))));return group}
-function generateObject(show=true){if(show)loading.style.display='grid';requestAnimationFrame(()=>{const prev=state.mesh?{x:state.mesh.rotation.x,y:state.mesh.rotation.y,z:state.mesh.rotation.z}:null;if(state.mesh)scene.remove(state.mesh);state.mesh=generateGeometryGroup();scene.add(state.mesh);if(prev)state.mesh.rotation.set(prev.x,prev.y,prev.z);state.stlText=toSTL(state.mesh,'voice_letter_wave');downloadBtn.disabled=false;if(show)setTimeout(()=>loading.style.display='none',250)})}
-[textInput,layoutSelect,sizeSlider,strokeSlider,detailSlider,toneSlider,heightSlider,tubeSlider].forEach(el=>el.oninput=()=>{labelValues();generateObject(false)});generateBtn.onclick=()=>generateObject(true);centerViewBtn.onclick=()=>{if(state.mesh)state.mesh.rotation.set(0,0,0);camera.position.set(0,0,210);camera.lookAt(0,0,0)};swatches.forEach(btn=>btn.onclick=()=>{state.colour=btn.dataset.colour;swatches.forEach(s=>s.classList.toggle('active',s===btn));colourValue.textContent={white:'White',silver:'Starry silver',gold:'Bright gold',black:'Black'}[state.colour];generateObject(false)});resetBtn.onclick=()=>{state.audio.pause();state.audioBuffer=null;state.duration=0;state.cropStart=0;state.cropEnd=0;state.waveformData=[];state.pitchData=[];timer.textContent='00:00';playbackBar.value=0;playbackBar.max=0;playbackBar.disabled=true;playbackTime.textContent='0.00s / 0.00s';playBtn.disabled=true;selectAllBtn.disabled=true;textInput.value='LOVE';layoutSelect.value='grid';sizeSlider.value=42;strokeSlider.value=4;detailSlider.value=84;toneSlider.value=1.15;heightSlider.value=18;tubeSlider.value=.45;labelValues();drawWave();generateObject(false)};
-viewer.onpointerdown=e=>{state.isPointerRotating=true;state.lastPointerX=e.clientX;state.lastPointerY=e.clientY;viewer.setPointerCapture(e.pointerId)};viewer.onpointermove=e=>{if(!state.isPointerRotating||!state.mesh)return;state.mesh.rotation.y+=(e.clientX-state.lastPointerX)*.01;state.mesh.rotation.x+=(e.clientY-state.lastPointerY)*.01;state.lastPointerX=e.clientX;state.lastPointerY=e.clientY};viewer.onpointerup=()=>state.isPointerRotating=false;
-function toSTL(group,name){group.updateMatrixWorld(true);let stl=`solid ${name}\n`;group.traverse(o=>{if(!o.isMesh)return;const g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);const pos=g.getAttribute('position'),ind=g.index,n=new THREE.Vector3(),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),faces=ind?ind.count/3:pos.count/3;for(let i=0;i<faces;i++){const ia=ind?ind.getX(i*3):i*3,ib=ind?ind.getX(i*3+1):i*3+1,ic=ind?ind.getX(i*3+2):i*3+2;a.fromBufferAttribute(pos,ia);b.fromBufferAttribute(pos,ib);c.fromBufferAttribute(pos,ic);n.crossVectors(new THREE.Vector3().subVectors(b,a),new THREE.Vector3().subVectors(c,a)).normalize();stl+=` facet normal ${n.x} ${n.y} ${n.z}\n  outer loop\n   vertex ${a.x} ${a.y} ${a.z}\n   vertex ${b.x} ${b.y} ${b.z}\n   vertex ${c.x} ${c.y} ${c.z}\n  endloop\n endfacet\n`}});return stl+`endsolid ${name}`}downloadBtn.onclick=()=>{const blob=new Blob([state.stlText],{type:'model/stl'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='voice-letter-wave.stl';a.click();URL.revokeObjectURL(a.href)};
-function animate(){requestAnimationFrame(animate);if(state.mesh&&!state.isPointerRotating)state.mesh.rotation.y+=.0015;renderer.render(scene,camera)}labelValues();resizeRenderer();generateObject(false);animate();
+const canvas = document.getElementById("preview");
+const ctx = canvas.getContext("2d");
+
+const textInput = document.getElementById("textInput");
+const recordBtn = document.getElementById("recordBtn");
+const stopBtn = document.getElementById("stopBtn");
+const playBtn = document.getElementById("playBtn");
+const downloadSvgBtn = document.getElementById("downloadSvgBtn");
+
+const intensity = document.getElementById("intensity");
+const density = document.getElementById("density");
+const distance = document.getElementById("distance");
+const stroke = document.getElementById("stroke");
+
+let mediaRecorder;
+let audioChunks = [];
+let audioBuffer = null;
+let audioUrl = null;
+let audio = new Audio();
+
+let voiceData = makeDefaultVoiceData();
+
+function resize(){
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * dpr;
+  canvas.height = canvas.clientHeight * dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  draw();
+}
+window.addEventListener("resize", resize);
+
+function updateLabels(){
+  intensityValue.textContent = intensity.value;
+  densityValue.textContent = density.value;
+  distanceValue.textContent = distance.value;
+  strokeValue.textContent = stroke.value;
+}
+
+[textInput,intensity,density,distance,stroke].forEach(el=>{
+  el.addEventListener("input",()=>{
+    textInput.value = textInput.value.toUpperCase();
+    updateLabels();
+    draw();
+  });
+});
+
+recordBtn.onclick = async ()=>{
+  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  audioChunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+
+  mediaRecorder.ondataavailable = e=>{
+    if(e.data.size) audioChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = async ()=>{
+    stream.getTracks().forEach(t=>t.stop());
+
+    const blob = new Blob(audioChunks,{type:"audio/webm"});
+    if(audioUrl) URL.revokeObjectURL(audioUrl);
+    audioUrl = URL.createObjectURL(blob);
+    audio.src = audioUrl;
+
+    const arr = await blob.arrayBuffer();
+    const ac = new AudioContext();
+    audioBuffer = await ac.decodeAudioData(arr);
+    voiceData = analyzeVoice(audioBuffer, Number(density.value));
+    draw();
+
+    playBtn.disabled = false;
+  };
+
+  mediaRecorder.start();
+  recordBtn.disabled = true;
+  stopBtn.disabled = false;
+};
+
+stopBtn.onclick = ()=>{
+  mediaRecorder.stop();
+  recordBtn.disabled = false;
+  stopBtn.disabled = true;
+};
+
+playBtn.onclick = ()=>{
+  audio.currentTime = 0;
+  audio.play();
+};
+
+function makeDefaultVoiceData(){
+  const arr = [];
+  for(let i=0;i<200;i++){
+    arr.push({
+      amp:.35 + .25*Math.sin(i*.18),
+      pitch:.45 + .35*Math.sin(i*.071)
+    });
+  }
+  return arr;
+}
+
+function analyzeVoice(buffer, samples){
+  const raw = buffer.getChannelData(0);
+  const sr = buffer.sampleRate;
+  const block = Math.floor(raw.length / samples);
+  const data = [];
+
+  for(let i=0;i<samples;i++){
+    const start = i * block;
+    const end = Math.min(raw.length, start + block);
+
+    let rms = 0;
+    for(let j=start;j<end;j++){
+      rms += raw[j] * raw[j];
+    }
+    rms = Math.sqrt(rms / Math.max(1,end-start));
+
+    const pitch = estimatePitch(raw.slice(start,end), sr);
+
+    data.push({
+      amp: Math.min(1, rms * 10),
+      pitch: pitch ? Math.min(1, Math.max(0, (pitch - 80) / 620)) : .25
+    });
+  }
+
+  return smoothVoice(data);
+}
+
+function estimatePitch(buf, sampleRate){
+  let size = buf.length;
+  let rms = 0;
+
+  for(let i=0;i<size;i++) rms += buf[i]*buf[i];
+  rms = Math.sqrt(rms/size);
+  if(rms < .01) return 0;
+
+  let bestOffset = -1;
+  let bestCorrelation = 0;
+  const minOffset = Math.floor(sampleRate / 800);
+  const maxOffset = Math.floor(sampleRate / 70);
+
+  for(let offset=minOffset; offset<maxOffset; offset++){
+    let correlation = 0;
+    for(let i=0;i<size-offset;i++){
+      correlation += 1 - Math.abs(buf[i] - buf[i+offset]);
+    }
+    correlation /= size;
+
+    if(correlation > bestCorrelation){
+      bestCorrelation = correlation;
+      bestOffset = offset;
+    }
+  }
+
+  if(bestCorrelation > .75){
+    return sampleRate / bestOffset;
+  }
+  return 0;
+}
+
+function smoothVoice(data){
+  return data.map((d,i)=>{
+    const a = data[Math.max(0,i-1)];
+    const b = data[Math.min(data.length-1,i+1)];
+    return {
+      amp:(a.amp+d.amp+b.amp)/3,
+      pitch:(a.pitch+d.pitch+b.pitch)/3
+    };
+  });
+}
+
+function draw(){
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = "#050505";
+  ctx.fillRect(0,0,w,h);
+
+  const letters = (textInput.value || "A")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g,"")
+    .slice(0,8)
+    .split("");
+
+  if(!letters.length) return;
+
+  const cols = letters.length <= 3 ? letters.length : Math.ceil(Math.sqrt(letters.length));
+  const rows = Math.ceil(letters.length / cols);
+
+  const marginX = w * .09;
+  const marginY = h * .16;
+  const cellW = (w - marginX*2) / cols;
+  const cellH = (h - marginY*2) / rows;
+
+  letters.forEach((letter,i)=>{
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = marginX + cellW * col + cellW/2;
+    const cy = marginY + cellH * row + cellH/2;
+
+    drawLetterUnit(letter,cx,cy,cellW,cellH,i);
+  });
+}
+
+function drawLetterUnit(letter,cx,cy,cellW,cellH,index){
+  const fontSize = Math.min(cellW, cellH) * .78;
+  const outline = Number(stroke.value);
+  const surround = Number(distance.value);
+  const power = Number(intensity.value);
+
+  ctx.save();
+  ctx.font = `900 ${fontSize}px Helvetica, Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const metrics = ctx.measureText(letter);
+  const letterW = metrics.width;
+  const letterH = fontSize * .78;
+
+  const rx = letterW/2 + surround;
+  const ry = letterH/2 + surround;
+
+  drawSurroundWave(cx,cy,rx,ry,index,power);
+
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = outline;
+  ctx.strokeText(letter,cx,cy + fontSize*.04);
+
+  ctx.restore();
+}
+
+function drawSurroundWave(cx,cy,rx,ry,index,power){
+  const count = Number(density.value);
+  const phase = index * 37;
+  const points = [];
+
+  for(let i=0;i<=count;i++){
+    const t = i / count;
+    const a = t * Math.PI * 2;
+
+    const d = voiceData[(i + phase) % voiceData.length] || {amp:.4,pitch:.4};
+
+    const toneRipple = Math.sin(a * (4 + d.pitch * 18) + d.pitch * 12);
+    const ampRipple = d.amp * power;
+    const pitchRipple = toneRipple * power * d.pitch * .42;
+
+    const offset = ampRipple + pitchRipple;
+
+    const x = cx + Math.cos(a) * (rx + offset);
+    const y = cy + Math.sin(a) * (ry + offset);
+
+    points.push({x,y});
+  }
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255,255,255,.94)";
+  ctx.lineWidth = 1.15;
+
+  for(let layer=0; layer<18; layer++){
+    const scale = 1 - layer * .012;
+    const alpha = 1 - layer * .045;
+
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+
+    points.forEach((p,i)=>{
+      const x = cx + (p.x - cx) * scale;
+      const y = cy + (p.y - cy) * scale;
+      if(i===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    });
+
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function createSVG(){
+  const w = 1200;
+  const h = 1200;
+  const letters = (textInput.value || "A")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g,"")
+    .slice(0,8)
+    .split("");
+
+  const cols = letters.length <= 3 ? letters.length : Math.ceil(Math.sqrt(letters.length));
+  const rows = Math.ceil(letters.length / cols);
+
+  const marginX = w * .09;
+  const marginY = h * .16;
+  const cellW = (w - marginX*2) / cols;
+  const cellH = (h - marginY*2) / rows;
+
+  let svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+<rect width="100%" height="100%" fill="black"/>
+`;
+
+  letters.forEach((letter,i)=>{
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = marginX + cellW * col + cellW/2;
+    const cy = marginY + cellH * row + cellH/2;
+    const fontSize = Math.min(cellW, cellH) * .78;
+
+    const approxW = fontSize * .68;
+    const approxH = fontSize * .78;
+    const rx = approxW/2 + Number(distance.value);
+    const ry = approxH/2 + Number(distance.value);
+
+    const path = makeWavePath(cx,cy,rx,ry,i,Number(intensity.value),Number(density.value));
+
+    svg += `<path d="${path}" fill="none" stroke="white" stroke-width="2"/>\n`;
+    svg += `<text x="${cx}" y="${cy + fontSize*.34}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="${fontSize}" font-weight="900" fill="none" stroke="white" stroke-width="${stroke.value}" stroke-linejoin="round">${letter}</text>\n`;
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function makeWavePath(cx,cy,rx,ry,index,power,count){
+  const phase = index * 37;
+  let dString = "";
+
+  for(let i=0;i<=count;i++){
+    const t = i / count;
+    const a = t * Math.PI * 2;
+    const d = voiceData[(i + phase) % voiceData.length] || {amp:.4,pitch:.4};
+
+    const toneRipple = Math.sin(a * (4 + d.pitch * 18) + d.pitch * 12);
+    const offset = d.amp * power + toneRipple * power * d.pitch * .42;
+
+    const x = cx + Math.cos(a) * (rx + offset);
+    const y = cy + Math.sin(a) * (ry + offset);
+
+    dString += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+  }
+
+  return dString + " Z";
+}
+
+downloadSvgBtn.onclick = ()=>{
+  const svg = createSVG();
+  const blob = new Blob([svg],{type:"image/svg+xml"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "letter-soundwave.svg";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+updateLabels();
+resize();
 </script>
 </body>
 </html>
